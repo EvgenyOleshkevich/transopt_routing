@@ -32,17 +32,16 @@ namespace balancedVRP
 
 		int_matrix dichotomous_division(const matrix& dist_mat, const int clusters)
 		{
-			std::vector<size_t> vertexes(dist_mat.size());
-			for (size_t i = 0; i < dist_mat.size(); i++)
-				vertexes[i] = i;
-			return dichotomous_division(dist_mat, vertexes, clusters);
+			std::vector<size_t> vertexes(dist_mat.size() - 1);
+			for (size_t i = 1; i < dist_mat.size(); i++)
+				vertexes[i - 1] = i;
+			return dichotomous_division(dist_mat, vertexes, clusters, vertexes.size() / clusters);
 		}
 
 
 		int_matrix dichotomous_division(const matrix& dist_mat,
-			const std::vector<size_t>& vertexes, const int clusters)
+			const std::vector<size_t>& vertexes, const int clusters, const int cluster_size)
 		{
-			int cluster_size = vertexes.size() / clusters;
 			int k1 = clusters / 2;
 			int k2 = clusters / 2 + clusters % 2;
 
@@ -59,7 +58,8 @@ namespace balancedVRP
 			std::vector<size_t> first_cluster = { vertexes[first] };
 			std::vector<size_t> second_cluster = { vertexes[second] };
 
-			while (vertexes.size() - first_cluster.size() > k2 * (cluster_size + 1))
+			while (vertexes.size() - first_cluster.size() > k2 * (cluster_size + 1) ||
+				first_cluster.size() < k1 * cluster_size)
 			{
 				/* inline body of : update_dist_to_cluaster
 				for (int i = 0; i < vertexes.size(); ++i)
@@ -117,12 +117,12 @@ namespace balancedVRP
 				return int_matrix{ first_cluster , second_cluster };
 			else if (clusters == 3)
 			{
-				auto res = dichotomous_division(dist_mat, second_cluster, k2);
+				auto res = dichotomous_division(dist_mat, second_cluster, k2, cluster_size);
 				res.push_back(first_cluster);
 				return res;
 			}
-			auto res1 = dichotomous_division(dist_mat, first_cluster, k1);
-			auto res2 = dichotomous_division(dist_mat, second_cluster, k2);
+			auto res1 = dichotomous_division(dist_mat, first_cluster, k1, cluster_size);
+			auto res2 = dichotomous_division(dist_mat, second_cluster, k2, cluster_size);
 			for (const auto& cluster : res2)
 				res1.push_back(cluster);
 			return res1;

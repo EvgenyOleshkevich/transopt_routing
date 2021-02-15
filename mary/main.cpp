@@ -922,7 +922,8 @@ int main()
     fill_matrix();
     
     auto routs_dichotomous_division = balancedVRP::clustering::dichotomous_division(dist_mat, 5);
-    auto TSP_opt_rout = routs_dichotomous_division;
+    auto routs_osman = osman::osman(routs_dichotomous_division, new osman::checker_change_smoll_local());
+    auto TSP_opt_rout = routs_osman;
     for (size_t i = 0; i < TSP_opt_rout.size(); ++i)
     {
         TSP_opt_rout[i] = local_opt::TSP_2_opt(TSP_opt_rout[i]);
@@ -960,7 +961,7 @@ int main()
             cout << vertex << ", ";
         cout << 0 << "]," << endl;
     }
-    auto routs_osman = osman::osman(routs_clark_right, new osman::checker_change_smoll_local());
+    routs_osman = osman::osman(routs_clark_right, new osman::checker_change_smoll_local());
     cout << "osman: lenght= " << length_routs(routs_osman) << endl;
     for (const vector<size_t>& rout : routs_osman)
     {

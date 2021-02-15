@@ -21,7 +21,7 @@ namespace balancedVRP
 
 		int_matrix dichotomous_division(const matrix&, const int);
 
-		int_matrix dichotomous_division(const matrix&, const std::vector<size_t>&, const int);
+		int_matrix dichotomous_division(const matrix&, const std::vector<size_t>&, const int, const int);
 	}
 
 }
