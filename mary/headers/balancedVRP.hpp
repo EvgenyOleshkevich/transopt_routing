@@ -22,6 +22,8 @@ namespace balancedVRP
 		int_matrix dichotomous_division(const matrix&, const int);
 
 		int_matrix dichotomous_division(const matrix&, const std::vector<size_t>&, const int, const int);
+	
+		int_matrix sweeping(const double const*, const double const*, const size_t, size_t);
 	}
 
 }

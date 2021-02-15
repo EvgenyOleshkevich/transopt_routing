@@ -1,4 +1,5 @@
 #include "../headers/balancedVRP.hpp"
+#include <math.h>
 
 namespace balancedVRP
 {
@@ -27,7 +28,7 @@ namespace balancedVRP
 			for (int i = 0; i < vertexes.size(); ++i)
 				if (dist_to_cluaster[i] < INT_MAX)
 					dist_to_cluaster[i] = dist_mat[vertexes[first]][vertexes[i]]
-						- dist_mat[vertexes[second]][vertexes[i]];
+					- dist_mat[vertexes[second]][vertexes[i]];
 		}
 
 		int_matrix dichotomous_division(const matrix& dist_mat, const int clusters)
@@ -127,6 +128,37 @@ namespace balancedVRP
 				res1.push_back(cluster);
 			return res1;
 		}
+
+		int_matrix sweeping(const double const* x, const double const* y, const size_t size, size_t count_clusters)
+		{
+			matrix points(size, std::vector<double>(4));
+			for (size_t i = 0; i < size; ++i)
+			{
+				points[i][0] = std::atan2(x[i + 1], y[i + 1]);
+				points[i][1] = x[i + 1];
+				points[i][2] = y[i + 1];
+				points[i][3] = i + 1;
+			}
+
+			std::sort(points.begin(), points.end());
+
+			int_matrix clusters;
+
+			while (points.size() > 0)
+			{
+				std::vector<size_t> cluster;
+				size_t size_cluster = points.size() / count_clusters;
+				--count_clusters;
+				for (size_t i = 0; i < size_cluster; ++i)
+				{
+					cluster.push_back((int)points.back()[3]);
+					points.pop_back();
+				}
+				clusters.push_back(cluster);
+			}
+			return clusters;
+		}
+
 	}
 
 }
