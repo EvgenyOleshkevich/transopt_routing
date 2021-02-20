@@ -717,6 +717,18 @@ int main()
 {
     srand(time(0));
     dist_mat = utils::fill_matrix(x, y, count_point);
+    auto rout = TSP::Lin_Kernighan::Lin_Kernighan(x, y, 51);
+    TSP::local_opt::TSP_2_opt(rout, dist_mat);
+    TSP::local_opt::TSP_3_opt(rout, dist_mat);
+    TSP::local_opt::TSP_2_opt(rout, dist_mat);
+    TSP::local_opt::TSP_3_opt(rout, dist_mat);
+    cout << "[" << 0 << ", ";
+    for (auto vertex : rout)
+        cout << vertex << ", ";
+    cout << 0 << "]," << endl;
+    std::cout << "Lin_Kernighan: lenght= " <<
+        utils::length_rout(rout, dist_mat) << std::endl;
+    return 0;
     balancedVRP::clustering::radian_sort(x, y, 51);
     //auto routs_dichotomous_division = balancedVRP::clustering::dichotomous_division(dist_mat, 5);
     auto routs_dichotomous_division = balancedVRP::clustering::sweeping(x, y, 50, 5);

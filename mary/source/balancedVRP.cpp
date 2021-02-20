@@ -129,23 +129,24 @@ namespace balancedVRP
 			return res1;
 		}
 
-		std::vector<size_t> radian_sort(const double const* x, const double const* y, const size_t size)
+		std::vector<size_t> radian_sort(const double const* x, const double const* y, size_t size)
 		{
+			--size;
 			matrix points(size, std::vector<double>(4));
 			for (size_t i = 0; i < size; ++i)
 			{
-				if (abs(x[i]) < 0.000001 && abs(y[i]) < 0.000001)
+				if (abs(x[i + 1]) < 0.000001 && abs(y[i + 1]) < 0.000001)
 				{
 					points[i][0] = -5;
-					points[i][1] = x[i];
-					points[i][2] = y[i];
-					points[i][3] = i;
+					points[i][1] = x[i + 1];
+					points[i][2] = y[i + 1];
+					points[i][3] = i + 1;
 					continue;
 				}
-				points[i][0] = std::atan2(x[i], y[i]);
-				points[i][1] = x[i];
-				points[i][2] = y[i];
-				points[i][3] = i;
+				points[i][0] = std::atan2(x[i + 1], y[i + 1]);
+				points[i][1] = x[i + 1];
+				points[i][2] = y[i + 1];
+				points[i][3] = i + 1;
 			}
 
 			std::sort(points.begin(), points.end());
@@ -185,7 +186,5 @@ namespace balancedVRP
 			}
 			return clusters;
 		}
-
 	}
-
 }

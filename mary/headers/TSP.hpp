@@ -4,14 +4,19 @@
 #include <algorithm>
 #include <ctime>
 #include <random>
-
+#include "utils.hpp"
 
 using matrix = std::vector<std::vector<double>>;
 using int_matrix = std::vector<std::vector<size_t>>;
 
 namespace TSP
 {
-    void Lin_Kernighan_by_rout(std::vector<size_t>&, const matrix&);
+    namespace Lin_Kernighan
+    {
+        std::vector<size_t> Lin_Kernighan(const double const*, const double const*, const size_t);
+
+        void Lin_Kernighan_by_rout(std::vector<size_t>&, const matrix&, const sorted_matrix&);
+    }
 
     namespace local_opt
     {

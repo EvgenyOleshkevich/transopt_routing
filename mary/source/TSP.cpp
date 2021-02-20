@@ -2,13 +2,118 @@
 #include "../headers/TSP.hpp"
 #include "../headers/utils.hpp"
 #include <math.h>
+#include <stack>
 
 namespace TSP
 {
-    void Lin_Kernighan_by_rout(std::vector<size_t>& rout, const matrix& dist_mat) {
+    namespace Lin_Kernighan
+    {
+        std::vector<size_t> Lin_Kernighan(const double const* x, const double const* y, const size_t size)
+        {
+            auto p = utils::fill_matrix_and_sort(x, y, size);
+            auto dist_mat = p.first;
+            auto sorted_edges = p.second;
 
-        
-        
+            auto rout = balancedVRP::clustering::radian_sort(x, y, size);
+            std::cout << "[" << 0 << ", ";
+            for (auto vertex : rout)
+                std::cout << vertex << ", ";
+            std::cout << 0 << "]," << std::endl;
+            std::cout << "sweaping: lenght= " <<
+                utils::length_rout(rout, dist_mat) << std::endl;
+
+            auto rout2 = rout;
+            local_opt::TSP_2_opt(rout2, dist_mat);
+            local_opt::TSP_3_opt(rout2, dist_mat);
+            local_opt::TSP_2_opt(rout2, dist_mat);
+            local_opt::TSP_3_opt(rout2, dist_mat);
+
+            std::cout << "[" << 0 << ", ";
+            for (auto vertex : rout2)
+                std::cout << vertex << ", ";
+            std::cout << 0 << "]," << std::endl;
+            std::cout << "local_opt: lenght= " <<
+                utils::length_rout(rout2, dist_mat) << std::endl;
+
+            Lin_Kernighan_by_rout(rout, dist_mat, sorted_edges);
+            return rout;
+        }
+
+        void Lin_Kernighan_by_rout(std::vector<size_t>& rout,
+            const matrix& dist_mat, const sorted_matrix& sorted_edges)
+        {
+            auto best_len = utils::length_rout(rout, dist_mat);
+            std::vector<size_t> best_rout;
+            std::vector<size_t> used(rout.size() + 1, 0);
+            used[0] = 1;
+            size_t t1 = 0;
+            size_t t2 = rout[0];
+
+            std::stack<size_t> stack_used_k;
+            size_t k = 1;
+            stack_used_k.push(k);
+            size_t i = 0;
+            do
+            {
+                k = stack_used_k.top();
+                stack_used_k.pop();
+                bool can_choose = false;
+                for (; k < sorted_edges[t1].size() &&
+                    sorted_edges[t1][k].first <= dist_mat[t1][t2]; ++k)
+                {
+                    if (1 == used[sorted_edges[t1][k].second])
+                        continue;
+                    size_t ty2 = sorted_edges[t1][k].second;
+                    best_rout.push_back(ty2);
+                    used[ty2] = 1;
+                    t1 = ty2;
+                    stack_used_k.push(k + 1);
+                    can_choose = true;
+                    break;
+                }
+
+                if (best_rout.size() == rout.size())
+                {
+                    double len = utils::length_rout(best_rout, dist_mat);
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        rout = best_rout;
+                    }
+                    used[best_rout.back()] = 0;
+                    best_rout.pop_back();
+                    used[best_rout.back()] = 0;
+                    best_rout.pop_back();
+                    stack_used_k.pop();
+                    t1 = best_rout.back();
+                }
+                else if (can_choose)
+                {
+                    stack_used_k.push(1);
+                }
+                else {
+                    if (best_rout.size() == 0)
+                        break;
+                    used[best_rout.back()] = 0;
+                    best_rout.pop_back();
+                    if (best_rout.size() > 0)
+                        t1 = best_rout.back();
+                    else
+                        t1 = 0;
+                }
+
+                if (0 == used[rout[best_rout.size()]])
+                    t2 = rout[best_rout.size()];
+                else
+                    for (size_t j = 1; j < used.size(); ++j)
+                        if (0 == used[j])
+                        {
+                            t2 = j;
+                            break;
+                        }
+                ++i;
+            } while (!stack_used_k.empty() && i < 1000000);
+        }
     }
 
     namespace local_opt
