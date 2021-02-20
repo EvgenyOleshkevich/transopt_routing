@@ -140,10 +140,14 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="source\balancedVRP.cpp" />
+    <ClCompile Include="source\TSP.cpp" />
     <ClCompile Include="source\mary.cpp" />
+    <ClCompile Include="source\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\balancedVRP.hpp" />
+    <ClInclude Include="headers\TSP.hpp" />
+    <ClInclude Include="headers\utils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

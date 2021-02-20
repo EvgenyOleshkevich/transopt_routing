@@ -5,6 +5,9 @@
 #include <ctime>
 #include <random>
 #include "headers/balancedVRP.hpp"
+#include "headers/utils.hpp"
+#include "headers/TSP.hpp"
+
 
 using namespace std;
 
@@ -20,34 +23,6 @@ const double y[51] = { 0, 62, 80, 60, 83, 36, 62, -93, 95, -22, 42, 77, -34, -66
 
 vector<vector<double>> dist_mat;
 
-double sqr(double x)
-{
-    return x * x;
-}
-
-void fill_matrix()
-{
-    dist_mat = vector<vector<double>>(count_point, vector<double>(count_point));
-    for (size_t i = 0; i < count_point; ++i)
-        for (size_t j = 0; j < count_point; ++j)
-            dist_mat[i][j] = std::sqrt(sqr(x[i] - x[j]) + sqr(y[i] - y[j]));
-}
-
-double length_rout(const vector<size_t>& rout)
-{
-    double lenght = dist_mat[0][rout[0]] + dist_mat[rout.back()][0];
-    for (size_t i = 1; i < rout.size(); ++i)
-        lenght += dist_mat[rout[i - 1]][rout[i]];
-    return lenght;
-}
-
-double length_routs(const vector<vector<size_t>>& routs)
-{
-    double lenght = 0;
-    for (const vector<size_t>& rout : routs)
-        lenght += length_rout(rout);
-    return lenght;
-}
 
 // smth
 void c()
@@ -58,9 +33,8 @@ void c()
     vector<size_t> g4 = { 12, 20, 15, 36, 7, 22, 23, 14, 9, 40, 18, 30, 49, 21 };
     vector<size_t> g5 = { 43 };
     vector<vector<size_t>> o = { g1, g2, g3, g4, g5 };
-    cout << length_routs(o);
+    cout << utils::length_routs(o, dist_mat);
 }
-
 
 namespace clark_right
 {
@@ -179,8 +153,8 @@ namespace osman
         {
             if (p > q)
                 swap(p, q);
-            double base_lenght = length_rout(routs[p]);
-            base_lenght += length_rout(routs[q]);
+            double base_lenght = utils::length_rout(routs[p], dist_mat);
+            base_lenght += utils::length_rout(routs[q], dist_mat);
 
             double best_lenght = base_lenght * 1.2;
 
@@ -193,8 +167,8 @@ namespace osman
                 for (size_t j = 0; j < rout2.size(); ++j)
                 {
                     swap(rout1[i], rout2[j]);
-                    double lenght = length_rout(rout1);
-                    lenght += length_rout(rout2);
+                    double lenght = utils::length_rout(rout1, dist_mat);
+                    lenght += utils::length_rout(rout2, dist_mat);
                     if (best_lenght > lenght)
                     {
                         best_lenght = lenght;
@@ -211,8 +185,8 @@ namespace osman
                     {
                         rout2.emplace(rout2.begin() + j, rout1[i]);
                         rout1.erase(rout1.begin() + i);
-                        double lenght = length_rout(rout1);
-                        lenght += length_rout(rout2);
+                        double lenght = utils::length_rout(rout1, dist_mat);
+                        lenght += utils::length_rout(rout2, dist_mat);
                         if (best_lenght > lenght)
                         {
                             best_lenght = lenght;
@@ -227,8 +201,8 @@ namespace osman
                 {
                     rout2.push_back(rout1[i]);
                     rout1.erase(rout1.begin() + i);
-                    double lenght = length_rout(rout1);
-                    lenght += length_rout(rout2);
+                    double lenght = utils::length_rout(rout1, dist_mat);
+                    lenght += utils::length_rout(rout2, dist_mat);
                     if (best_lenght > lenght)
                     {
                         best_lenght = lenght;
@@ -247,8 +221,8 @@ namespace osman
                     {
                         rout1.emplace(rout1.begin() + j, rout2[i]);
                         rout2.erase(rout2.begin() + i);
-                        double lenght = length_rout(rout1);
-                        lenght += length_rout(rout2);
+                        double lenght = utils::length_rout(rout1, dist_mat);
+                        lenght += utils::length_rout(rout2, dist_mat);
                         if (best_lenght > lenght)
                         {
                             best_lenght = lenght;
@@ -263,8 +237,8 @@ namespace osman
                 {
                     rout1.push_back(rout2[i]);
                     rout2.erase(rout2.begin() + i);
-                    double lenght = length_rout(rout1);
-                    lenght += length_rout(rout2);
+                    double lenght = utils::length_rout(rout1, dist_mat);
+                    lenght += utils::length_rout(rout2, dist_mat);
                     if (best_lenght > lenght)
                     {
                         best_lenght = lenght;
@@ -289,8 +263,8 @@ namespace osman
         {
             if (p > q)
                 swap(p, q);
-            double base_lenght = length_rout(routs[p]);
-            base_lenght += length_rout(routs[q]);
+            double base_lenght = utils::length_rout(routs[p], dist_mat);
+            base_lenght += utils::length_rout(routs[q], dist_mat);
 
             double best_lenght = base_lenght * 1.2;
 
@@ -303,8 +277,8 @@ namespace osman
                 for (size_t j = 0; j < rout2.size(); ++j)
                 {
                     swap(rout1[i], rout2[j]);
-                    double lenght = length_rout(rout1);
-                    lenght += length_rout(rout2);
+                    double lenght = utils::length_rout(rout1, dist_mat);
+                    lenght += utils::length_rout(rout2, dist_mat);
                     if (best_lenght > lenght)
                     {
                         best_lenght = lenght;
@@ -325,8 +299,8 @@ namespace osman
     {
         if (p > q)
             swap(p, q);
-        double base_lenght = length_rout(routs[p]);
-        base_lenght += length_rout(routs[q]);
+        double base_lenght = utils::length_rout(routs[p], dist_mat);
+        base_lenght += utils::length_rout(routs[q], dist_mat);
 
         double best_lenght = base_lenght * 1.2;
 
@@ -339,8 +313,8 @@ namespace osman
             for (size_t j = 0; j < rout2.size(); ++j)
             {
                 swap(rout1[i], rout2[j]);
-                double lenght = length_rout(rout1);
-                lenght += length_rout(rout2);
+                double lenght = utils::length_rout(rout1, dist_mat);
+                lenght += utils::length_rout(rout2, dist_mat);
                 if (best_lenght > lenght)
                 {
                     best_lenght = lenght;
@@ -357,8 +331,8 @@ namespace osman
                 {
                     rout2.emplace(rout2.begin() + j, rout1[i]);
                     rout1.erase(rout1.begin() + i);
-                    double lenght = length_rout(rout1);
-                    lenght += length_rout(rout2);
+                    double lenght = utils::length_rout(rout1, dist_mat);
+                    lenght += utils::length_rout(rout2, dist_mat);
                     if (best_lenght > lenght)
                     {
                         best_lenght = lenght;
@@ -373,8 +347,8 @@ namespace osman
             {
                 rout2.push_back(rout1[i]);
                 rout1.erase(rout1.begin() + i);
-                double lenght = length_rout(rout1);
-                lenght += length_rout(rout2);
+                double lenght = utils::length_rout(rout1, dist_mat);
+                lenght += utils::length_rout(rout2, dist_mat);
                 if (best_lenght > lenght)
                 {
                     best_lenght = lenght;
@@ -393,8 +367,8 @@ namespace osman
                 {
                     rout1.emplace(rout1.begin() + j, rout2[i]);
                     rout2.erase(rout2.begin() + i);
-                    double lenght = length_rout(rout1);
-                    lenght += length_rout(rout2);
+                    double lenght = utils::length_rout(rout1, dist_mat);
+                    lenght += utils::length_rout(rout2, dist_mat);
                     if (best_lenght > lenght)
                     {
                         best_lenght = lenght;
@@ -409,8 +383,8 @@ namespace osman
             {
                 rout1.push_back(rout2[i]);
                 rout2.erase(rout2.begin() + i);
-                double lenght = length_rout(rout1);
-                lenght += length_rout(rout2);
+                double lenght = utils::length_rout(rout1, dist_mat);
+                lenght += utils::length_rout(rout2, dist_mat);
                 if (best_lenght > lenght)
                 {
                     best_lenght = lenght;
@@ -471,10 +445,10 @@ namespace osman
     vector<vector<size_t>> osman(vector<vector<size_t>> routs, const checker_change* const checker)
     {
         auto best_routs = routs;
-        auto best_lenght = length_routs(routs);
+        auto best_lenght = utils::length_routs(routs, dist_mat);
         move_table = get_move_table();
         ts = max(7.0, 9.6 * log(count_point * need_routs) - 40);// 13
-        size_t max_iter = 340 + 0.000353 * 5 * sqr(count_point * need_routs);
+        size_t max_iter = 340 + 0.000353 * 5 * utils::sqr(count_point * need_routs);
         fill_BSTM_RECM(routs, checker);
 
         for (size_t i = 0; i < max_iter; ++i)
@@ -527,7 +501,7 @@ namespace osman
             default:
                 break;
             }
-            auto len = length_routs(routs);
+            auto len = utils::length_routs(routs, dist_mat);
             if (best_lenght > len)
             {
                 best_lenght = len;
@@ -536,182 +510,6 @@ namespace osman
             recalculate_BSTM_RECM(routs, p, q, checker);
         }
         return best_routs;
-    }
-}
-
-namespace local_opt
-{
-    vector<size_t> TSP_2_opt(vector<size_t> rout)
-    {
-        auto best_len = length_rout(rout);
-        auto best_rout = rout;
-        for (int i = 0; i < rout.size() - 2; ++i)
-            for (int j = i + 1; j < rout.size() - 1; ++j)
-            {
-                rout = vector<size_t>();
-                for (int k = 0; k < i; ++k)
-                    rout.push_back(best_rout[k]);
-                for (int k = j; k >= i; --k)
-                    rout.push_back(best_rout[k]);
-                for (int k = j + 1; k < best_rout.size(); ++k)
-                    rout.push_back(best_rout[k]);
-
-                auto len = length_rout(rout);
-                if (best_len > len)
-                {
-                    best_len = len;
-                    best_rout = rout;
-                }
-            }
-        return best_rout;
-    }
-
-    vector<size_t> TSP_3_opt(vector<size_t> rout)
-    {
-        auto best_len = length_rout(rout);
-        auto best_rout = rout;
-        // 3 ребра смежны
-        for (size_t i = 0; i < rout.size() - 3; ++i)
-        {
-            swap(rout[i + 1], rout[i + 2]);
-
-            auto len = length_rout(rout);
-            if (best_len > len)
-            {
-                best_len = len;
-                best_rout = rout;
-            }
-            else
-                swap(rout[i + 1], rout[i + 2]);
-        }
-
-        // 2 ребра смежны, пусть вторые 2
-
-        for (size_t i = 0; i < rout.size() - 4; ++i)
-            for (size_t j = i + 2; j < rout.size() - 1; ++j)
-            {
-                vector<size_t> rout1;
-                vector<size_t> rout2;
-
-                for (size_t k = 0; k <= i; ++k)
-                {
-                    rout1.push_back(best_rout[k]);
-                    rout2.push_back(best_rout[k]);
-                }
-
-                rout1.push_back(best_rout[j + 1]);
-                for (size_t k = i + 1; k <= j; ++k)
-                    rout1.push_back(best_rout[k]);
-                for (size_t k = j + 2; k < best_rout.size(); ++k)
-                    rout1.push_back(best_rout[k]);
-
-                for (size_t k = j; k > i; --k)
-                    rout2.push_back(best_rout[k]);
-                for (size_t k = j + 1; k < best_rout.size(); ++k)
-                    rout2.push_back(best_rout[k]);
-
-                auto len = length_rout(rout1);
-                if (best_len > len)
-                {
-                    best_len = len;
-                    best_rout = rout1;
-                }
-
-                len = length_rout(rout2);
-                if (best_len > len)
-                {
-                    best_len = len;
-                    best_rout = rout2;
-                }
-            }
-
-        // 2 ребра смежны, пусть первые 2
-
-        for (size_t j = 0; j < rout.size() - 1; ++j)
-            for (size_t i = j + 3; i < rout.size() - 4; ++i)
-            {
-                vector<size_t> rout1;
-                vector<size_t> rout2;
-
-                for (size_t k = 0; k <= j; ++k)
-                {
-                    rout1.push_back(best_rout[k]);
-                    rout2.push_back(best_rout[k]);
-                }
-
-
-                for (size_t k = j + 2; k <= i; ++k)
-                    rout1.push_back(best_rout[k]);
-                rout1.push_back(best_rout[j + 1]);
-                for (size_t k = i + 1; k < best_rout.size(); ++k)
-                    rout1.push_back(best_rout[k]);
-
-                for (size_t k = i; k > j; --k)
-                    rout2.push_back(best_rout[k]);
-                for (size_t k = i + 1; k < best_rout.size(); ++k)
-                    rout2.push_back(best_rout[k]);
-
-                auto len = length_rout(rout1);
-                if (best_len > len)
-                {
-                    best_len = len;
-                    best_rout = rout1;
-                }
-
-                len = length_rout(rout2);
-                if (best_len > len)
-                {
-                    best_len = len;
-                    best_rout = rout2;
-                }
-            }
-
-
-        // 3 ребра не смежны
-
-        for (size_t i = 0; i < rout.size() - 5; ++i)
-            for (size_t j = i + 2; j < rout.size() - 3; ++j)
-                for (size_t k = j + 2; i < rout.size() - 1; ++i)
-                {
-                    vector<size_t> rout1;
-                    vector<size_t> rout2;
-
-                    for (size_t l = 0; l <= i; ++l)
-                    {
-                        rout1.push_back(best_rout[l]);
-                        rout2.push_back(best_rout[l]);
-                    }
-
-                    for (size_t l = k; l >= j + 1; --l)
-                        rout1.push_back(best_rout[l]);
-                    for (size_t l = i + 1; l <= j; ++l)
-                        rout1.push_back(best_rout[l]);
-                    for (size_t l = k + 1; l < best_rout.size(); ++l)
-                        rout1.push_back(best_rout[l]);
-
-
-                    for (size_t l = j; l >= i + 1; --l)
-                        rout2.push_back(best_rout[l]);
-                    for (size_t l = k; l >= j + 1; --l)
-                        rout2.push_back(best_rout[l]);
-                    for (size_t l = k + 1; l < best_rout.size(); ++l)
-                        rout2.push_back(best_rout[l]);
-
-                    auto len = length_rout(rout1);
-                    if (best_len > len)
-                    {
-                        best_len = len;
-                        best_rout = rout1;
-                    }
-
-                    len = length_rout(rout2);
-                    if (best_len > len)
-                    {
-                        best_len = len;
-                        best_rout = rout2;
-                    }
-                }
-        return best_rout;
     }
 }
 
@@ -918,7 +716,7 @@ namespace genetic
 int main()
 {
     srand(time(0));
-    fill_matrix();
+    dist_mat = utils::fill_matrix(x, y, count_point);
     
     //auto routs_dichotomous_division = balancedVRP::clustering::dichotomous_division(dist_mat, 5);
     auto routs_dichotomous_division = balancedVRP::clustering::sweeping(x, y, 50, 5);
@@ -926,13 +724,13 @@ int main()
     auto TSP_opt_rout = routs_dichotomous_division;
     for (size_t i = 0; i < TSP_opt_rout.size(); ++i)
     {
-        TSP_opt_rout[i] = local_opt::TSP_2_opt(TSP_opt_rout[i]);
-        TSP_opt_rout[i] = local_opt::TSP_3_opt(TSP_opt_rout[i]);
-        TSP_opt_rout[i] = local_opt::TSP_2_opt(TSP_opt_rout[i]);
-        TSP_opt_rout[i] = local_opt::TSP_3_opt(TSP_opt_rout[i]);
+        TSP::local_opt::TSP_2_opt(TSP_opt_rout[i], dist_mat);
+        TSP::local_opt::TSP_3_opt(TSP_opt_rout[i], dist_mat);
+        TSP::local_opt::TSP_2_opt(TSP_opt_rout[i], dist_mat);
+        TSP::local_opt::TSP_3_opt(TSP_opt_rout[i], dist_mat);
     }
 
-    cout << "dichotomous_division: lenght= " << length_routs(TSP_opt_rout) << endl;
+    cout << "dichotomous_division: lenght= " << utils::length_routs(TSP_opt_rout, dist_mat) << endl;
     for (const vector<size_t>& rout : TSP_opt_rout)
     {
         cout << "[" << 0 << ", ";
@@ -953,7 +751,7 @@ int main()
     }*/
     
     auto routs_clark_right = clark_right::clark_right();
-    cout << "clark_right: lenght= " << length_routs(routs_clark_right) <<endl;
+    cout << "clark_right: lenght= " << utils::length_routs(routs_clark_right, dist_mat) <<endl;
     for (const vector<size_t>& rout : routs_clark_right)
     {
         cout << "[" << 0 << ", ";
@@ -962,7 +760,7 @@ int main()
         cout << 0 << "]," << endl;
     }
     auto routs_osman = osman::osman(routs_clark_right, new osman::checker_change_smoll_local());
-    cout << "osman: lenght= " << length_routs(routs_osman) << endl;
+    cout << "osman: lenght= " << utils::length_routs(routs_osman, dist_mat) << endl;
     for (const vector<size_t>& rout : routs_osman)
     {
         cout << "[" << 0 << ", ";
@@ -972,12 +770,15 @@ int main()
     }
 
     TSP_opt_rout = routs_osman;
-    TSP_opt_rout[2] = local_opt::TSP_2_opt(TSP_opt_rout[2]);
-    TSP_opt_rout[2] = local_opt::TSP_3_opt(TSP_opt_rout[2]);
-    TSP_opt_rout[3] = local_opt::TSP_2_opt(TSP_opt_rout[3]);
-    TSP_opt_rout[3] = local_opt::TSP_3_opt(TSP_opt_rout[3]);
+    for (size_t i = 0; i < TSP_opt_rout.size(); ++i)
+    {
+        TSP::local_opt::TSP_2_opt(TSP_opt_rout[i], dist_mat);
+        TSP::local_opt::TSP_3_opt(TSP_opt_rout[i], dist_mat);
+        TSP::local_opt::TSP_2_opt(TSP_opt_rout[i], dist_mat);
+        TSP::local_opt::TSP_3_opt(TSP_opt_rout[i], dist_mat);
+    }
 
-    cout << "TSP_opt_rout: lenght= " << length_routs(TSP_opt_rout) << endl;
+    cout << "TSP_opt_rout: lenght= " << utils::length_routs(TSP_opt_rout, dist_mat) << endl;
     for (const vector<size_t>& rout : TSP_opt_rout)
     {
         cout << "[" << 0 << ", ";
