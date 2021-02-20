@@ -11,7 +11,7 @@ using int_matrix = std::vector<std::vector<size_t>>;
 
 namespace TSP
 {
-    std::vector<size_t> Lin_Kernighan(const matrix&);
+    void Lin_Kernighan_by_rout(std::vector<size_t>&, const matrix&);
 
     namespace local_opt
     {

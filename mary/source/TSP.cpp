@@ -5,8 +5,10 @@
 
 namespace TSP
 {
-    std::vector<size_t> Lin_Kernighan(const matrix&) {
-        return std::vector<size_t>();
+    void Lin_Kernighan_by_rout(std::vector<size_t>& rout, const matrix& dist_mat) {
+
+        
+        
     }
 
     namespace local_opt

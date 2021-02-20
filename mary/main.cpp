@@ -717,7 +717,7 @@ int main()
 {
     srand(time(0));
     dist_mat = utils::fill_matrix(x, y, count_point);
-    
+    balancedVRP::clustering::radian_sort(x, y, 51);
     //auto routs_dichotomous_division = balancedVRP::clustering::dichotomous_division(dist_mat, 5);
     auto routs_dichotomous_division = balancedVRP::clustering::sweeping(x, y, 50, 5);
     //auto routs_osman = osman::osman(routs_dichotomous_division, new osman::checker_change_smoll_local());

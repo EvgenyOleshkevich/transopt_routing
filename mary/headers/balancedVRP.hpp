@@ -23,7 +23,7 @@ namespace balancedVRP
 
 		int_matrix dichotomous_division(const matrix&, const std::vector<size_t>&, const int, const int);
 	
-		void radian_sort(std::vector<size_t>&);
+		std::vector<size_t> radian_sort(const double const*, const double const*, const size_t);
 		
 		int_matrix sweeping(const double const*, const double const*, const size_t, size_t);
 	}
