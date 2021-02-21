@@ -8,7 +8,7 @@ namespace TSP
 {
     namespace Lin_Kernighan
     {
-        std::vector<size_t> Lin_Kernighan(const double const* x, const double const* y, const size_t size)
+        std::vector<size_t> Lin_Kernighan(const double* const x, const double* const y, const size_t size)
         {
             auto p = utils::fill_matrix_and_sort(x, y, size);
             auto dist_mat = p.first;
@@ -136,6 +136,8 @@ namespace TSP
     {
         void TSP_2_opt(std::vector<size_t>& rout, const matrix& dist_mat)
         {
+            if (rout.size() < 3)
+                return;
             auto best_len = utils::length_rout(rout, dist_mat);
             auto best_rout = rout;
             for (int i = 0; i < rout.size() - 2; ++i)
@@ -161,6 +163,8 @@ namespace TSP
 
         void TSP_3_opt(std::vector<size_t>& rout, const matrix& dist_mat)
         {
+            if (rout.size() < 4)
+                return;
             auto best_len = utils::length_rout(rout, dist_mat);
             auto best_rout = rout;
             // 3 ребра смежны

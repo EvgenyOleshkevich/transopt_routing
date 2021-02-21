@@ -1,5 +1,4 @@
 #include "../headers/balancedVRP.hpp"
-#include "../headers/utils.hpp"
 #include "../headers/TSP.hpp"
 #include <math.h>
 
@@ -130,7 +129,7 @@ namespace balancedVRP
 			return res1;
 		}
 
-		std::vector<size_t> radian_sort(const double const* x, const double const* y, size_t size)
+		std::vector<size_t> radian_sort(const double* const x, const double* const y, size_t size)
 		{
 			--size;
 			matrix points(size, std::vector<double>(4));
@@ -158,7 +157,7 @@ namespace balancedVRP
 			return res;
 		}
 		
-		int_matrix sweeping(const double const* x, const double const* y, const size_t size, size_t count_clusters)
+		int_matrix sweeping(const double* const x, const double* const y, const size_t size, size_t count_clusters)
 		{
 			matrix points(size, std::vector<double>(4));
 			for (size_t i = 0; i < size; ++i)

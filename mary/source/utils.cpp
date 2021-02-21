@@ -9,7 +9,7 @@ namespace utils
         return x * x;
     }
 
-    matrix fill_matrix(const double const* x, const double const* y,
+    matrix fill_matrix(const double* const x, const double* const y,
         const size_t count_point)
     {
         matrix dist_mat = std::vector<std::vector<double>>(count_point, std::vector<double>(count_point));
@@ -20,7 +20,7 @@ namespace utils
     }
 
     std::pair<matrix, sorted_matrix> fill_matrix_and_sort(
-        const double const* x, const double const* y,
+        const double* const x, const double* const y,
         const size_t count_point)
     {
         sorted_matrix sorted_edges(count_point, std::vector<std::pair<double, size_t>>(count_point));
@@ -56,6 +56,4 @@ namespace utils
             lenght += length_rout(rout, dist_mat);
         return lenght;
     }
-
-
 }

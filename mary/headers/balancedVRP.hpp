@@ -1,13 +1,11 @@
+#pragma once
 #include <iostream>
 #include <string>
 #include <vector>
 #include <algorithm>
 #include <ctime>
 #include <random>
-
-
-using matrix = std::vector<std::vector<double>>;
-using int_matrix = std::vector<std::vector<size_t>>;
+#include "../headers/utils.hpp"
 
 namespace balancedVRP
 {
@@ -23,9 +21,9 @@ namespace balancedVRP
 
 		int_matrix dichotomous_division(const matrix&, const std::vector<size_t>&, const int, const int);
 	
-		std::vector<size_t> radian_sort(const double const*, const double const*, const size_t);
+		std::vector<size_t> radian_sort(const double* const, const double* const, const size_t);
 		
-		int_matrix sweeping(const double const*, const double const*, const size_t, size_t);
+		int_matrix sweeping(const double* const, const double* const, const size_t, size_t);
 	}
 
 	int_matrix cutting_rout(const std::vector<size_t>&, const matrix&, size_t);
