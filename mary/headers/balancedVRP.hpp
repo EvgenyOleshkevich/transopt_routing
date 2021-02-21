@@ -21,6 +21,14 @@ namespace balancedVRP
 
 		int_matrix dichotomous_division(const matrix&, const std::vector<size_t>&, const int, const int);
 	
+		double demand_of_vertex(const std::vector<double>&, const std::vector<size_t>&);
+
+		int_matrix dichotomous_division_weight(const matrix&,
+			const std::vector<double>&, const double, const size_t);
+
+		int_matrix dichotomous_division_weight(const matrix&, const std::vector<double>&,
+			const std::vector<size_t>&, const double, const size_t, const bool);
+
 		std::vector<size_t> radian_sort(const double* const, const double* const, const size_t);
 		
 		int_matrix sweeping(const double* const, const double* const, const size_t, size_t);
