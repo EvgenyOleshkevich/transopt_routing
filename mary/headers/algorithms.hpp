@@ -68,8 +68,8 @@ namespace algorithms
             size_t count_routs = count_point - 1;
             while (count_routs != need_routs)
             {
-                size_t i = sotred_save_matrix[0][1];
-                size_t j = sotred_save_matrix[0][2];
+                size_t i = (size_t)sotred_save_matrix[0][1];
+                size_t j = (size_t)sotred_save_matrix[0][2];
                 sotred_save_matrix.erase(sotred_save_matrix.begin());
                 if (routs_start[j].empty() || routs_end[i].empty() || routs_end[i][0] == j)
                     continue; // проверка, что они из разных маршрутов
@@ -108,7 +108,8 @@ namespace algorithms
     {
     public:
         Osman(const matrix& dist_mat, const size_t count_point, const size_t need_routs) :
-            dist_mat(dist_mat), count_point(count_point), need_routs(need_routs)
+            dist_mat(dist_mat), count_point(count_point), need_routs(need_routs),
+            ts((size_t)(std::max(7.0, 9.6 * log(count_point * need_routs) - 40)))// 13
         {}
 
         int_matrix start(int_matrix routs,
@@ -118,8 +119,8 @@ namespace algorithms
             auto best_routs = routs;
             auto best_lenght = utils::length_routs(routs, dist_mat);
             move_table = get_move_table();
-            ts = std::max(7.0, 9.6 * log(count_point * need_routs) - 40);// 13
-            size_t max_iter = 340 + 0.000353 * 5 * utils::sqr(count_point * need_routs);
+            
+            size_t max_iter = (size_t)(340 + 0.000353 * 5 * utils::sqr((double)count_point * need_routs));
             fill_BSTM_RECM(routs, checker);
 
             for (size_t i = 0; i < max_iter; ++i)
@@ -304,7 +305,7 @@ namespace algorithms
                     }
                 }
 
-                osman->BSTM[p][q] = best_lenght - base_lenght;
+                osman->BSTM[p][q] = (size_t)(best_lenght - base_lenght);
                 osman->BSTM[q][p] = 0;
                 osman->RECM[p][q] = decision;
                 osman->RECM[q][p] = { {0, 0}, 6 };
@@ -344,7 +345,7 @@ namespace algorithms
                         swap(rout1[i], rout2[j]);
                     }
 
-                osman->BSTM[p][q] = best_lenght - base_lenght;
+                osman->BSTM[p][q] = (size_t)(best_lenght - base_lenght);
                 osman->BSTM[q][p] = 0;
                 osman->RECM[p][q] = decision;
                 osman->RECM[q][p] = { {0, 0}, 6 };
@@ -469,7 +470,7 @@ namespace algorithms
                 }
             }
 
-            BSTM[p][q] = best_lenght - base_lenght;
+            BSTM[p][q] = (size_t)(best_lenght - base_lenght);
             BSTM[q][p] = 0;
             RECM[p][q] = decision;
             RECM[q][p] = { {0, 0}, 6 };
@@ -577,7 +578,7 @@ namespace algorithms
         size_t rand_size_t(size_t max)
         {
             --max;
-            return round(((double)rand()) * max / RAND_MAX);
+            return (size_t)round(((double)rand()) * max / RAND_MAX);
         }
 
         struct gen
@@ -617,14 +618,14 @@ namespace algorithms
         {
             auto child = parent1;
 
-            for (int i = a; i <= b; ++i)
+            for (size_t i = a; i <= b; ++i)
             {
                 auto miss_vertex = child.rout[i];
                 child.rout[i] = parent2.rout[i];
-                for (int j = 0; j < a; ++j)
+                for (size_t j = 0; j < a; ++j)
                     if (child.rout[j] == child.rout[i])
                         child.rout[j] = miss_vertex;
-                for (int j = i + 1; j < parent1.rout.size(); ++j)
+                for (size_t j = i + 1; j < parent1.rout.size(); ++j)
                     if (child.rout[j] == child.rout[i])
                         child.rout[j] = miss_vertex;
             }

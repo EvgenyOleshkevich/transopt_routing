@@ -140,15 +140,15 @@ namespace TSP
                 return;
             auto best_len = utils::length_rout(rout, dist_mat);
             auto best_rout = rout;
-            for (int i = 0; i < rout.size() - 2; ++i)
-                for (int j = i + 1; j < rout.size() - 1; ++j)
+            for (int i = 0; i < (int)rout.size() - 2; ++i)
+                for (int j = i + 1; j < (int)rout.size() - 1; ++j)
                 {
                     rout = std::vector<size_t>();
                     for (int k = 0; k < i; ++k)
                         rout.push_back(best_rout[k]);
                     for (int k = j; k >= i; --k)
                         rout.push_back(best_rout[k]);
-                    for (int k = j + 1; k < best_rout.size(); ++k)
+                    for (size_t k = j + 1; k < best_rout.size(); ++k)
                         rout.push_back(best_rout[k]);
 
                     auto len = utils::length_rout(rout, dist_mat);

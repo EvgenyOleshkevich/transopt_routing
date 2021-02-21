@@ -32,7 +32,7 @@ void c()
 
 int main()
 {
-    srand(time(0));
+    srand((unsigned int)time(0));
     dist_mat = utils::fill_matrix(x, y, count_point);
     auto rout = TSP::Lin_Kernighan::Lin_Kernighan(x, y, 51);
     TSP::local_opt::TSP_2_opt(rout, dist_mat);
