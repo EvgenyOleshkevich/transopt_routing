@@ -28,4 +28,6 @@ namespace balancedVRP
 		int_matrix sweeping(const double const*, const double const*, const size_t, size_t);
 	}
 
+	int_matrix cutting_rout(const std::vector<size_t>&, const matrix&, size_t);
+
 }

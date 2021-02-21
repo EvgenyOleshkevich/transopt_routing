@@ -1,9 +1,10 @@
 #include "../headers/balancedVRP.hpp"
+#include "../headers/utils.hpp"
+#include "../headers/TSP.hpp"
 #include <math.h>
 
 namespace balancedVRP
 {
-
 	namespace clustering
 	{
 		std::pair<int, int> two_farthest_vertex(const matrix& dist_mat,
@@ -187,4 +188,52 @@ namespace balancedVRP
 			return clusters;
 		}
 	}
+
+	int_matrix cutting_rout(const std::vector<size_t>& rout,
+		const matrix& dist_mat, size_t count_rout)
+	{
+		using namespace utils;
+		size_t count_points = rout.size();
+		int_matrix routs;
+		routs.push_back(rout);
+		for (size_t i = count_rout; i > 1; --i)
+		{
+			size_t size_rout = count_points / i;
+			std::vector<size_t> new_rout1;
+			for (size_t j = 0; j < size_rout; ++j)
+			{
+				new_rout1.push_back(routs[0].back());
+				routs[0].pop_back();
+			}
+			if (count_points % i > 0)
+			{
+				std::vector<size_t> new_rout2(new_rout1);
+				new_rout2.push_back(routs[0].back());
+				std::vector<size_t> rout0(routs[0]);
+				rout0.pop_back();
+				auto len1 = length_rout(new_rout1, dist_mat) + length_rout(routs[0], dist_mat);
+				auto len2 = length_rout(new_rout2, dist_mat) + length_rout(rout0, dist_mat);
+
+				if (len1 > len2)
+				{
+					new_rout1 = new_rout2;
+					routs[0] = rout0;
+					++size_rout;
+				}
+			}
+			count_points -= size_rout;
+			routs.push_back(new_rout1);
+
+		}
+
+		for (size_t i = 0; i < routs.size(); ++i)
+		{
+			TSP::local_opt::TSP_2_opt(routs[i], dist_mat);
+			TSP::local_opt::TSP_3_opt(routs[i], dist_mat);
+			TSP::local_opt::TSP_2_opt(routs[i], dist_mat);
+			TSP::local_opt::TSP_3_opt(routs[i], dist_mat);
+		}
+		return routs;
+	}
+
 }

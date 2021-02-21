@@ -728,6 +728,18 @@ int main()
     cout << 0 << "]," << endl;
     std::cout << "Lin_Kernighan: lenght= " <<
         utils::length_rout(rout, dist_mat) << std::endl;
+
+    auto cutting_routs = balancedVRP::cutting_rout(rout, dist_mat, 6);
+
+    for (const vector<size_t>& rout : cutting_routs)
+    {
+        cout << "[" << 0 << ", ";
+        for (auto vertex : rout)
+            cout << vertex << ", ";
+        cout << 0 << "]," << endl;
+    }
+    cout << "cutting_rout: lenght= " << utils::length_routs(cutting_routs, dist_mat) << endl;
+
     return 0;
     balancedVRP::clustering::radian_sort(x, y, 51);
     //auto routs_dichotomous_division = balancedVRP::clustering::dichotomous_division(dist_mat, 5);

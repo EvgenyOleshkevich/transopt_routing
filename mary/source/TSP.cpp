@@ -101,7 +101,23 @@ namespace TSP
                     else
                         t1 = 0;
                 }
-
+                /*
+                t2 = 0;
+                for (size_t j = 0; j < rout.size() - 1; ++j)
+                    if (t1 == rout[j])
+                    {
+                        if (0 == used[rout[j + 1]])
+                            t2 = rout[j + 1];
+                        break;
+                    }
+                if (t2 == 0)
+                    for (size_t j = 1; j < used.size(); ++j)
+                        if (0 == used[j])
+                        {
+                            t2 = j;
+                            break;
+                        }
+                */
                 if (0 == used[rout[best_rout.size()]])
                     t2 = rout[best_rout.size()];
                 else
