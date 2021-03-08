@@ -21,6 +21,25 @@ namespace TSP
         void TSP_2_opt(std::vector<size_t>&, const matrix&);
 
         void TSP_3_opt(std::vector<size_t>&, const matrix&);
+
+        void swap(std::vector<size_t>&, const matrix&);
+
+        void shift(std::vector<size_t>&, const matrix&);
+
+        void exchange(std::vector<size_t>&, const matrix&);
+    }
+
+    namespace local_opt_for_VND_STS
+    {
+        void TSP_2_opt(vec_int_float&, const matrix&);
+
+        void TSP_3_opt(vec_int_float&, const matrix&);
+
+        void swap(vec_int_float&, const matrix&);
+
+        void shift(vec_int_float&, const matrix&);
+
+        void exchange(vec_int_float&, const size_t, const size_t);
     }
 
 }

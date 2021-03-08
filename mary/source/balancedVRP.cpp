@@ -398,4 +398,355 @@ namespace balancedVRP
 		return routs;
 	}
 
+
+	VND_STS::VND_STS(const matrix& dist_mat, const size_t count_point, const size_t need_routs
+		, const double capacity, const std::vector<double>& weight) :
+		dist_mat(dist_mat), count_point(count_point), need_routs(need_routs),
+		capacity(capacity), weight(weight), fict_vertex(count_point)
+	{
+		for (auto& vec : this->dist_mat)
+		{
+			vec.push_back(0);
+		}
+		this->dist_mat.push_back(std::vector<double>(fict_vertex + 1, 0));
+	}
+
+	std::pair<int_matrix, matrix> VND_STS::dynamic_decode(const vec_int_float& vertexes)
+	{
+		std::vector < size_t> init_rout = { vertexes[0].first };
+		double lenght = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
+		std::vector<std::pair<double, int>> F = { {lenght , -1} }; // F(0);
+		// lenght of routs, index for restore routs
+
+		for (size_t i = 1; i < vertexes.size(); ++i)
+		{
+			double weight = 0;
+			std::vector <size_t> rout;
+			F.push_back({ INT_MAX, i - 1 });
+			for (int j = i; j > 0; --j)
+			{
+				rout.push_back(vertexes[j].first);
+				weight += vertexes[j].second;
+				if (weight > capacity)
+					break;
+				lenght = utils::length_rout_fict(rout, dist_mat, fict_vertex);
+				if (j > 0)
+					lenght += F[j - 1].first;
+
+				if (F[i].first > lenght)
+				{
+					F[i].first = lenght;
+					F[i].second = j - 1;
+				}
+			}
+		}
+
+		int_matrix routs;
+		matrix routs_weight;
+		int i = F.size() - 1;
+		do
+		{
+			std::vector <size_t> rout;
+			std::vector <double> rout_weight;
+			for (int j = i; j > F[i].second; --j)
+			{
+				rout.push_back(vertexes[j].first);
+				rout_weight.push_back(vertexes[j].second);
+			}
+
+			routs.push_back(rout);
+			routs_weight.push_back(rout_weight);
+			i = F[i].second;
+		} while (i > 0);
+
+		return { routs, routs_weight };
+	}
+
+	std::pair<int_matrix, matrix> VND_STS::greedy_decode(const vec_int_float& vertexes)
+	{
+		int_matrix routs;
+		matrix routs_weight;
+
+		std::vector<size_t> rout;
+		std::vector<double> rout_weight;
+		double w = 0;
+		for (size_t i = 0; i < vertexes.size(); ++i)
+		{
+			rout.push_back(vertexes[i].first);
+			w += vertexes[i].second;
+
+			if (w > capacity)
+			{
+				w -= vertexes[i].second + capacity;
+				rout_weight.push_back(-w);
+				--i;
+				routs.push_back(rout);
+				routs_weight.push_back(rout_weight);
+				rout = std::vector<size_t>();
+				rout_weight = std::vector<double>();
+			}
+			else {
+				rout_weight.push_back(vertexes[i].second);
+			}
+		}
+
+		routs.push_back(rout);
+		routs_weight.push_back(rout_weight);
+
+		return { routs , routs_weight };
+	}
+
+	double VND_STS::dynamic_decode_fast(const vec_int_float& vertexes)
+	{
+		std::vector < size_t> init_rout = { vertexes[0].first };
+		double lenght = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
+		std::vector<std::pair<double, int>> F = { {lenght , -1} }; // F(0);
+		// lenght of routs, index for restore routs
+
+		for (size_t i = 1; i < vertexes.size(); ++i)
+		{
+			double weight = 0;
+			std::vector <size_t> rout;
+			F.push_back({ INT_MAX, i - 1 });
+			for (int j = i; j >= 0; --j)
+			{
+				rout.push_back(vertexes[j].first);
+				weight += vertexes[j].second;
+				if (weight > capacity)
+					break;
+				lenght = utils::length_rout_fict(rout, dist_mat, fict_vertex);
+				if (j > 0)
+					lenght += F[j - 1].first;
+
+				if (F[i].first > lenght)
+				{
+					F[i].first = lenght;
+					F[i].second = j - 1;
+				}
+			}
+		}
+
+		return F.back().first;
+	}
+
+	double VND_STS::greedy_decode_fast(const vec_int_float& vertexes)
+	{
+		double lenght = 0;
+		std::vector<size_t> rout;
+		double w = 0;
+		for (size_t i = 0; i < vertexes.size(); ++i)
+		{
+			rout.push_back(vertexes[i].first);
+			w += vertexes[i].second;
+
+			if (w > capacity)
+			{
+				w -= vertexes[i].second + capacity;
+				--i;
+				lenght += utils::length_rout_fict(rout, dist_mat, fict_vertex);
+				rout = std::vector<size_t>();
+			}
+		}
+		lenght += utils::length_rout_fict(rout, dist_mat, fict_vertex);
+		return lenght;
+	}
+
+	void VND_STS::dynamic_decode_add_fict(vec_int_float& vertexes)
+	{
+		std::vector < size_t> init_rout = { vertexes[0].first };
+		double lenght = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
+		std::vector<std::pair<double, int>> F = { {lenght , -1} }; // F(0);
+		// lenght of routs, index for restore routs
+
+		for (size_t i = 1; i < vertexes.size(); ++i)
+		{
+			double weight = 0;
+			std::vector <size_t> rout;
+			F.push_back({ INT_MAX, i - 1 });
+			for (int j = i; j > 0; --j)
+			{
+				rout.push_back(vertexes[j].first);
+				weight += vertexes[j].second;
+				if (weight > capacity)
+					break;
+				lenght = utils::length_rout_fict(rout, dist_mat, fict_vertex);
+				if (j > 0)
+					lenght += F[j - 1].first;
+
+				if (F[i].first > lenght)
+				{
+					F[i].first = lenght;
+					F[i].second = j - 1;
+				}
+			}
+		}
+
+		int_matrix routs;
+		int i = F.size() - 1;
+		do
+		{
+			double w = 0;
+			int j = i;
+			for (; j > F[i].second; --j)
+				w += vertexes[j].second;
+			if (w < capacity && w > 3 * capacity / 4)
+			{
+				++j;
+				vertexes.emplace(vertexes.begin() + j,
+					std::pair<size_t, double>(fict_vertex, capacity - w));
+			}
+			i = F[i].second;
+		} while (i > 0);
+	}
+
+	double VND_STS::VND(vec_int_float& vertexes)
+	{
+		vec_int_float best_vertexes = vertexes;
+		double best_lenght = dynamic_decode_fast(vertexes);
+		while (true)
+		{
+			TSP::local_opt_for_VND_STS::TSP_2_opt(vertexes, dist_mat);
+			double lenght = dynamic_decode_fast(vertexes);
+			bool is_break = true;
+			if (best_lenght > lenght)
+			{
+				best_lenght = lenght;
+				best_vertexes = vertexes;
+				is_break = false;
+			}
+			TSP::local_opt_for_VND_STS::swap(vertexes, dist_mat);
+			lenght = dynamic_decode_fast(vertexes);
+			if (best_lenght > lenght)
+			{
+				best_lenght = lenght;
+				best_vertexes = vertexes;
+				is_break = false;
+			}
+			TSP::local_opt_for_VND_STS::shift(vertexes, dist_mat);
+			lenght = dynamic_decode_fast(vertexes);
+			if (best_lenght > lenght)
+			{
+				best_lenght = lenght;
+				best_vertexes = vertexes;
+				is_break = false;
+			}
+			if (is_break)
+			{
+				break;
+			}
+		}
+
+		vertexes = best_vertexes;
+		return best_lenght;
+	}
+	
+	double VND_STS::STS(vec_int_float& vertexes)
+	{
+		vec_int_float best_vertexes = vertexes;
+		double best_lenght = greedy_decode_fast(vertexes);
+
+		for (size_t i = 0; i < 30; ++i)
+		{
+			size_t a = rand() % vertexes.size();
+			size_t b = rand() % vertexes.size();
+			while (a == b)
+				b = rand() % vertexes.size();
+			if (a > b)
+				std::swap(a, b);
+
+			size_t type = rand() % 4;
+			switch (type)
+			{
+			case 0:
+			{
+				TSP::local_opt_for_VND_STS::TSP_2_opt(vertexes, dist_mat);
+				double lenght = greedy_decode_fast(vertexes);
+				if (best_lenght > lenght)
+				{
+					best_lenght = lenght;
+					best_vertexes = vertexes;
+				}
+				break;
+			}
+			case 1:
+			{
+				std::swap(vertexes[a], vertexes[b]);
+				double lenght = greedy_decode_fast(vertexes);
+				if (best_lenght > lenght)
+				{
+					best_lenght = lenght;
+					best_vertexes = vertexes;
+				}
+				break;
+			}
+			case 2:
+			{
+				for (size_t j = a; j < b - 1; ++j)
+					std::swap(vertexes[j], vertexes[j + 1]);
+				double lenght = greedy_decode_fast(vertexes);
+				if (best_lenght > lenght)
+				{
+					best_lenght = lenght;
+					best_vertexes = vertexes;
+				}
+				break;
+			}
+			case 3:
+			{
+				TSP::local_opt_for_VND_STS::exchange(vertexes, a, b);
+				double lenght = greedy_decode_fast(vertexes);
+				if (best_lenght > lenght)
+				{
+					best_lenght = lenght;
+					best_vertexes = vertexes;
+				}
+				break;
+			}
+			default:
+				break;
+			}
+		}
+		vertexes = best_vertexes;
+		return best_lenght;
+	}
+
+	std::pair<int_matrix, matrix> VND_STS::calculate(vec_int_float& vertexes)
+	{
+		vec_int_float best_vertexes = vertexes;
+		double best_lenght = dynamic_decode_fast(vertexes);
+
+		for (size_t i = 0; i < 10; ++i)
+		{
+			double lenght = VND(vertexes);
+			if (best_lenght > lenght)
+			{
+				best_lenght = lenght;
+				best_vertexes = vertexes;
+			}
+			//dynamic_decode_add_fict(vertexes);
+			lenght = STS(vertexes);
+			if (best_lenght > lenght)
+			{
+				best_lenght = lenght;
+				best_vertexes = vertexes;
+			}
+
+			for (size_t j = 1; j < vertexes.size(); ++j)
+				if (vertexes[j].first == vertexes[j - 1].first)
+				{
+					vertexes[j].second += vertexes[j - 1].second;
+					--j;
+					vertexes.erase(vertexes.begin() + j);
+				}
+		}
+		vertexes = best_vertexes;
+		/*for (size_t i = 0; i < vertexes.size(); ++i)
+			if (vertexes[i].first == fict_vertex)
+			{
+				vertexes.erase(vertexes.begin() + i);
+				--i;
+			}*/
+
+		return dynamic_decode(vertexes);
+	}
 }

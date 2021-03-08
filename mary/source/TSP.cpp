@@ -15,7 +15,7 @@ namespace TSP
             auto sorted_edges = p.second;
 
             auto rout = balancedVRP::clustering::radian_sort(x, y, size);
-            std::cout << "[" << 0 << ", ";
+            /*std::cout << "[" << 0 << ", ";
             for (auto vertex : rout)
                 std::cout << vertex << ", ";
             std::cout << 0 << "]," << std::endl;
@@ -33,7 +33,7 @@ namespace TSP
                 std::cout << vertex << ", ";
             std::cout << 0 << "]," << std::endl;
             std::cout << "local_opt: lenght= " <<
-                utils::length_rout(rout2, dist_mat) << std::endl;
+                utils::length_rout(rout2, dist_mat) << std::endl;*/
 
             Lin_Kernighan_by_rout(rout, dist_mat, sorted_edges);
             return rout;
@@ -309,6 +309,315 @@ namespace TSP
                         }
                     }
             rout = best_rout;
+        }
+
+        void swap(std::vector<size_t>& rout, const matrix& dist_mat)
+        {
+            if (rout.size() < 3)
+                return;
+            auto best_len = utils::length_rout(rout, dist_mat);
+            auto best_rout = rout;
+
+            for (int i = 0; i < (int)rout.size() - 1; ++i)
+                for (int j = i + 1; j < (int)rout.size(); ++j)
+                {
+                    std::swap(rout[i], rout[j]);
+                    auto len = utils::length_rout(rout, dist_mat);
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        best_rout = rout;
+                    }
+                    std::swap(rout[i], rout[j]);
+                }
+            rout = best_rout;
+        }
+
+        void shift(std::vector<size_t>& rout, const matrix& dist_mat)
+        {
+            if (rout.size() < 3)
+                return;
+            auto best_len = utils::length_rout(rout, dist_mat);
+            auto best_rout = rout;
+
+            for (int i = 0; i < (int)rout.size() - 1; ++i)
+            {
+                rout = best_rout;
+                for (int j = i; j < (int)rout.size() - 1; ++j)
+                {
+                    std::swap(rout[j], rout[j + 1]);
+                    auto len = utils::length_rout(rout, dist_mat);
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        best_rout = rout;
+                    }
+                }
+            }
+            rout = best_rout;
+        }
+
+        void exchange(std::vector<size_t>& rout, const matrix& dist_mat)
+        {
+            size_t shift = rout.size() / 5;
+            if (rout.size() < 3)
+                return;
+            auto best_len = utils::length_rout(rout, dist_mat);
+            auto best_rout = rout;
+
+            for (int i = 0; i < (int)rout.size() - 1; ++i)
+                for (int j = i + shift; j < (int)rout.size(); ++j)
+                {
+                    
+
+
+                    auto len = utils::length_rout(rout, dist_mat);
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        best_rout = rout;
+                    }
+                    std::swap(rout[i], rout[j]);
+                }
+            rout = best_rout;
+        }
+    }
+
+    namespace local_opt_for_VND_STS
+    {
+        void TSP_2_opt(vec_int_float& rout, const matrix& dist_mat)
+        {
+            if (rout.size() < 3)
+                return;
+            auto best_len = utils::length_rout(rout, dist_mat);
+            auto best_rout = rout;
+            for (int i = 0; i < (int)rout.size() - 2; ++i)
+                for (int j = i + 1; j < (int)rout.size() - 1; ++j)
+                {
+                    rout = vec_int_float();
+                    for (int k = 0; k < i; ++k)
+                        rout.push_back(best_rout[k]);
+                    for (int k = j; k >= i; --k)
+                        rout.push_back(best_rout[k]);
+                    for (size_t k = j + 1; k < best_rout.size(); ++k)
+                        rout.push_back(best_rout[k]);
+
+                    auto len = utils::length_rout(rout, dist_mat);
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        best_rout = rout;
+                    }
+                }
+            rout = best_rout;
+        }
+
+        void TSP_3_opt(vec_int_float& rout, const matrix& dist_mat)
+        {
+            if (rout.size() < 4)
+                return;
+            auto best_len = utils::length_rout(rout, dist_mat);
+            auto best_rout = rout;
+            // 3 ребра смежны
+            for (size_t i = 0; i < rout.size() - 3; ++i)
+            {
+                std::swap(rout[i + 1], rout[i + 2]);
+
+                auto len = utils::length_rout(rout, dist_mat);
+                if (best_len > len)
+                {
+                    best_len = len;
+                    best_rout = rout;
+                }
+                else
+                    std::swap(rout[i + 1], rout[i + 2]);
+            }
+
+            // 2 ребра смежны, пусть вторые 2
+
+            for (size_t i = 0; i < rout.size() - 4; ++i)
+                for (size_t j = i + 2; j < rout.size() - 1; ++j)
+                {
+                    vec_int_float rout1;
+                    vec_int_float rout2;
+
+                    for (size_t k = 0; k <= i; ++k)
+                    {
+                        rout1.push_back(best_rout[k]);
+                        rout2.push_back(best_rout[k]);
+                    }
+
+                    rout1.push_back(best_rout[j + 1]);
+                    for (size_t k = i + 1; k <= j; ++k)
+                        rout1.push_back(best_rout[k]);
+                    for (size_t k = j + 2; k < best_rout.size(); ++k)
+                        rout1.push_back(best_rout[k]);
+
+                    for (size_t k = j; k > i; --k)
+                        rout2.push_back(best_rout[k]);
+                    for (size_t k = j + 1; k < best_rout.size(); ++k)
+                        rout2.push_back(best_rout[k]);
+
+                    auto len = utils::length_rout(rout1, dist_mat);
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        best_rout = rout1;
+                    }
+
+                    len = utils::length_rout(rout2, dist_mat);
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        best_rout = rout2;
+                    }
+                }
+
+            // 2 ребра смежны, пусть первые 2
+
+            for (size_t j = 0; j < rout.size() - 1; ++j)
+                for (size_t i = j + 3; i < rout.size() - 4; ++i)
+                {
+                    vec_int_float rout1;
+                    vec_int_float rout2;
+
+                    for (size_t k = 0; k <= j; ++k)
+                    {
+                        rout1.push_back(best_rout[k]);
+                        rout2.push_back(best_rout[k]);
+                    }
+
+
+                    for (size_t k = j + 2; k <= i; ++k)
+                        rout1.push_back(best_rout[k]);
+                    rout1.push_back(best_rout[j + 1]);
+                    for (size_t k = i + 1; k < best_rout.size(); ++k)
+                        rout1.push_back(best_rout[k]);
+
+                    for (size_t k = i; k > j; --k)
+                        rout2.push_back(best_rout[k]);
+                    for (size_t k = i + 1; k < best_rout.size(); ++k)
+                        rout2.push_back(best_rout[k]);
+
+                    auto len = utils::length_rout(rout1, dist_mat);
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        best_rout = rout1;
+                    }
+
+                    len = utils::length_rout(rout2, dist_mat);
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        best_rout = rout2;
+                    }
+                }
+
+
+            // 3 ребра не смежны
+
+            for (size_t i = 0; i < rout.size() - 5; ++i)
+                for (size_t j = i + 2; j < rout.size() - 3; ++j)
+                    for (size_t k = j + 2; i < rout.size() - 1; ++i)
+                    {
+                        vec_int_float rout1;
+                        vec_int_float rout2;
+
+                        for (size_t l = 0; l <= i; ++l)
+                        {
+                            rout1.push_back(best_rout[l]);
+                            rout2.push_back(best_rout[l]);
+                        }
+
+                        for (size_t l = k; l >= j + 1; --l)
+                            rout1.push_back(best_rout[l]);
+                        for (size_t l = i + 1; l <= j; ++l)
+                            rout1.push_back(best_rout[l]);
+                        for (size_t l = k + 1; l < best_rout.size(); ++l)
+                            rout1.push_back(best_rout[l]);
+
+
+                        for (size_t l = j; l >= i + 1; --l)
+                            rout2.push_back(best_rout[l]);
+                        for (size_t l = k; l >= j + 1; --l)
+                            rout2.push_back(best_rout[l]);
+                        for (size_t l = k + 1; l < best_rout.size(); ++l)
+                            rout2.push_back(best_rout[l]);
+
+                        auto len = utils::length_rout(rout1, dist_mat);
+                        if (best_len > len)
+                        {
+                            best_len = len;
+                            best_rout = rout1;
+                        }
+
+                        len = utils::length_rout(rout2, dist_mat);
+                        if (best_len > len)
+                        {
+                            best_len = len;
+                            best_rout = rout2;
+                        }
+                    }
+            rout = best_rout;
+        }
+
+        void swap(vec_int_float& rout, const matrix& dist_mat)
+        {
+            if (rout.size() < 3)
+                return;
+            auto best_len = utils::length_rout(rout, dist_mat);
+            auto best_rout = rout;
+
+            for (int i = 0; i < (int)rout.size() - 1; ++i)
+                for (int j = i + 1; j < (int)rout.size(); ++j)
+                {
+                    std::swap(rout[i], rout[j]);
+                    auto len = utils::length_rout(rout, dist_mat);
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        best_rout = rout;
+                    }
+                    std::swap(rout[i], rout[j]);
+                }
+            rout = best_rout;
+        }
+
+        void shift(vec_int_float& rout, const matrix& dist_mat)
+        {
+            if (rout.size() < 3)
+                return;
+            auto best_len = utils::length_rout(rout, dist_mat);
+            auto best_rout = rout;
+
+            for (int i = 0; i < (int)rout.size() - 1; ++i)
+            {
+                rout = best_rout;
+                for (int j = i; j < (int)rout.size() - 1; ++j)
+                {
+                    std::swap(rout[j], rout[j + 1]);
+                    auto len = utils::length_rout(rout, dist_mat);
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        best_rout = rout;
+                    }
+                }
+            }
+            rout = best_rout;
+        }
+
+        void exchange(vec_int_float& rout, const size_t a, const size_t b)
+        {
+            if (rout[a].second < rout[b].second)
+                std::swap(rout[a], rout[b]);
+
+            size_t ind = rout[b].first;
+            rout[b].first = rout[a].first;
+            rout[a].second -= rout[b].second;
+
+            rout.emplace(rout.begin() + a, std::pair<size_t, double>( ind, rout[b].second ));
         }
     }
 }

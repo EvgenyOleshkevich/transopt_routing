@@ -1,5 +1,6 @@
 #include "../headers/balancedVRP.hpp"
 #include "../headers/utils.hpp"
+#include <random>
 #include <math.h>
 
 namespace utils
@@ -47,6 +48,65 @@ namespace utils
         for (size_t i = 1; i < rout.size(); ++i)
             lenght += dist_mat[rout[i - 1]][rout[i]];
         return lenght;
+    }
+
+    double length_rout(const vec_int_float& rout, const matrix& dist_mat)
+    {
+        double lenght = dist_mat[0][rout[0].first] + dist_mat[rout.back().first][0];
+        for (size_t i = 1; i < rout.size(); ++i)
+            lenght += dist_mat[rout[i - 1].first][rout[i].first];
+        return lenght;
+    }
+
+    double length_rout(const std::vector<size_t>& rout, const matrix& dist_mat,
+        const size_t beg, const size_t end)
+    {
+        double lenght = 0;
+        for (size_t i = beg; i < end; ++i)
+            lenght += dist_mat[rout[i]][rout[i + 1]];
+        return lenght;
+    }
+
+    double length_rout_before(const std::vector<size_t>& rout,
+        const matrix& dist_mat, const size_t end)
+    {
+        double lenght = dist_mat[0][rout[0]];
+        for (size_t i = 0; i < end; ++i)
+            lenght += dist_mat[rout[i]][rout[i + 1]];
+        return lenght;
+    }
+
+    double length_rout_after(const std::vector<size_t>& rout,
+        const matrix& dist_mat, const size_t beg)
+    {
+        double lenght = dist_mat[rout.back()][0];
+        for (size_t i = beg + 1; i < rout.size(); ++i)
+            lenght += dist_mat[rout[i - 1]][rout[i]];
+        return lenght;
+    }
+
+    double length_rout_fict(const vec_int_float& rout_fict,
+        const matrix& dist_mat, const size_t fict)
+    {
+        std::vector<size_t> rout;
+        for (auto v : rout_fict)
+            if (v.first != fict)
+                rout.push_back(v.first);
+        if (rout.size() == 0)
+            return 0;
+        return length_rout(rout, dist_mat);
+    }
+
+    double length_rout_fict(const std::vector<size_t>& rout_fict,
+        const matrix& dist_mat, const size_t fict)
+    {
+        std::vector<size_t> rout;
+        for (auto v : rout_fict)
+            if (v != fict)
+                rout.push_back(v);
+        if (rout.size() == 0)
+            return 0;
+        return length_rout(rout, dist_mat);
     }
 
     double length_routs(const int_matrix& routs, const matrix& dist_mat)

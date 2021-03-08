@@ -29,8 +29,43 @@ void c()
     cout << utils::length_routs(o, dist_mat);
 }
 
+void c2()
+{
+    srand((unsigned int)time(0));
+    dist_mat = utils::fill_matrix(x, y, count_point);
+    auto rout = TSP::Lin_Kernighan::Lin_Kernighan(x, y, 51);
+    TSP::local_opt::TSP_2_opt(rout, dist_mat);
+    TSP::local_opt::TSP_3_opt(rout, dist_mat);
+    TSP::local_opt::TSP_2_opt(rout, dist_mat);
+    TSP::local_opt::TSP_3_opt(rout, dist_mat);
+    balancedVRP::VND_STS a(dist_mat, count_point, need_routs, 600, weight);
+
+    std::vector<std::pair<size_t, double>> t;
+    for (size_t v : rout)
+    {
+        t.push_back({ v, weight[v] });
+    }
+
+    auto routs = a.calculate(t).first;
+
+    cout << "dynamic: lenght= " << utils::length_routs(routs, dist_mat) << endl;
+    for (const vector<size_t>& rout : routs)
+    {
+        double w = 0;
+        cout << "[" << 0 << ", ";
+        for (auto vertex : rout)
+        {
+            w += weight[vertex];
+            cout << vertex << ", ";
+        }
+        cout << 0 << "],"/*weight: " << w*/ << endl;
+    }
+}
+
 int main()
 {
+    c2();
+    return 0;
     srand((unsigned int)time(0));
     dist_mat = utils::fill_matrix(x, y, count_point);
 
