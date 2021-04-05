@@ -11,7 +11,7 @@ namespace TSP
 {
     namespace Lin_Kernighan
     {
-        std::vector<size_t> Lin_Kernighan(const double* const, const double* const, const size_t);
+        std::vector<size_t> Lin_Kernighan(const std::vector<double>&, const std::vector<double>&, const size_t);
 
         void Lin_Kernighan_by_rout(std::vector<size_t>&, const matrix&, const sorted_matrix&);
     }

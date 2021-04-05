@@ -8,32 +8,13 @@ namespace TSP
 {
     namespace Lin_Kernighan
     {
-        std::vector<size_t> Lin_Kernighan(const double* const x, const double* const y, const size_t size)
+        std::vector<size_t> Lin_Kernighan(const std::vector<double>& x, const std::vector<double>& y, const size_t size)
         {
             auto p = utils::fill_matrix_and_sort(x, y, size);
             auto dist_mat = p.first;
             auto sorted_edges = p.second;
 
             auto rout = balancedVRP::clustering::radian_sort(x, y, size);
-            /*std::cout << "[" << 0 << ", ";
-            for (auto vertex : rout)
-                std::cout << vertex << ", ";
-            std::cout << 0 << "]," << std::endl;
-            std::cout << "sweaping: lenght= " <<
-                utils::length_rout(rout, dist_mat) << std::endl;
-
-            auto rout2 = rout;
-            local_opt::TSP_2_opt(rout2, dist_mat);
-            local_opt::TSP_3_opt(rout2, dist_mat);
-            local_opt::TSP_2_opt(rout2, dist_mat);
-            local_opt::TSP_3_opt(rout2, dist_mat);
-
-            std::cout << "[" << 0 << ", ";
-            for (auto vertex : rout2)
-                std::cout << vertex << ", ";
-            std::cout << 0 << "]," << std::endl;
-            std::cout << "local_opt: lenght= " <<
-                utils::length_rout(rout2, dist_mat) << std::endl;*/
 
             Lin_Kernighan_by_rout(rout, dist_mat, sorted_edges);
             return rout;

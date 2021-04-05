@@ -18,7 +18,11 @@ namespace utils
 
     matrix fill_matrix(const double* const, const double* const, const size_t);
 
-    std::pair < matrix, sorted_matrix> fill_matrix_and_sort(const double* const, const double* const, const size_t);
+    matrix fill_matrix(const std::vector<double>&, const std::vector<double>&, const size_t);
+
+    std::pair < matrix, sorted_matrix> fill_matrix_and_sort(const std::vector<double>&, const std::vector<double>&, const size_t);
+
+    matrix fill_matrix_with_end_point(const std::vector<double>&, const std::vector<double>&);
 
     double length_rout(const std::vector<size_t>&, const matrix&);
 

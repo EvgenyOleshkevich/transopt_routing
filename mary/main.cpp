@@ -1,4 +1,5 @@
 #include "headers/algorithms.hpp"
+#include <fstream>
 
 
 using namespace std;
@@ -6,13 +7,13 @@ using namespace algorithms;
 
 const size_t count_point = 51;
 const size_t need_routs = 5;
-const double x[] = { 0, 28, -7, 78, 23, -99, -96, -39, 45, -56, -2, -77, -25, 43, -72,
+vector<double> x { 0, 28, -7, 78, 23, -99, -96, -39, 45, -56, -2, -77, -25, 43, -72,
 -31, 78, -49, -76, 23, -33, -22, -58, -79, 24, -6, -92, 41, -42, 92, -72, -25, -3,
 74, 44, 46, -16, -2, 36, -21, -69, 19, 10, 39, 40, -84, 46, 15, -86, -65, 9 };
-const double y[] = { 0, 62, 80, 60, 83, 36, 62, -93, 95, -22, 42, 77, -34, -66, -43,
+vector<double> y { 0, 62, 80, 60, 83, 36, 62, -93, 95, -22, 42, 77, -34, -66, -43,
 -69, 98, 94, -15, -34, -51, 3, -66, -69, 90, -53, 75, -28, 53, 46, -7, 44, 62,
 -23, 48, -22, -90, -45, -50, 46, -18, 30, -28, 10, 43, 83, -84, 64, 45, 7, -63 };
-const vector<double> weight{ 0, 49, 68, 34, 27, 51, 3, 8, 76, 18, 76, 79, 41, 68,
+vector<double> weight{ 0, 49, 68, 34, 27, 51, 3, 8, 76, 18, 76, 79, 41, 68,
 79, 87, 14, 17, 39, 47, 30, 2, 56, 97, 37, 54, 39, 45, 88, 31, 65, 49, 54, 92, 8,
 83, 31, 65, 80, 66, 40, 85, 10, 64, 40, 54, 86, 80, 63, 31, 24 };
 
@@ -58,13 +59,40 @@ void c2()
             w += weight[vertex];
             cout << vertex << ", ";
         }
-        cout << 0 << "],"/*weight: " << w*/ << endl;
+        cout << 0 << "]," << endl;
     }
+}
+
+void read_file()
+{
+    x.clear();
+    y.clear();
+    weight.clear();
+
+    x.push_back(0);
+    y.push_back(0);
+    weight.push_back(0);
+    std::ifstream in("file.csv");
+    while (!in.eof())
+    {
+        string line;
+        getline(in, line);
+        double w, X, Y;
+        in >> w >> X >> Y;
+        x.push_back(X);
+        y.push_back(Y);
+        weight.push_back(w);
+    }
+
+    in.close();
+
+    auto dist = utils::fill_matrix_with_end_point(x, y);
+    int asc = 0;
 }
 
 int main()
 {
-    c2();
+    read_file();
     return 0;
     srand((unsigned int)time(0));
     dist_mat = utils::fill_matrix(x, y, count_point);

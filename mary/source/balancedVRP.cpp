@@ -292,7 +292,7 @@ namespace balancedVRP
 		}
 
 
-		std::vector<size_t> radian_sort(const double* const x, const double* const y, size_t size)
+		std::vector<size_t> radian_sort(const std::vector<double>& x, const std::vector<double>& y, size_t size)
 		{
 			--size;
 			matrix points(size, std::vector<double>(4));

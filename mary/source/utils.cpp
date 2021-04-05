@@ -20,8 +20,18 @@ namespace utils
         return dist_mat;
     }
 
+    matrix fill_matrix(const std::vector<double>& x, const std::vector<double>& y,
+        const size_t count_point)
+    {
+        matrix dist_mat = std::vector<std::vector<double>>(count_point, std::vector<double>(count_point));
+        for (size_t i = 0; i < count_point; ++i)
+            for (size_t j = 0; j < count_point; ++j)
+                dist_mat[i][j] = std::sqrt(sqr(x[i] - x[j]) + sqr(y[i] - y[j]));
+        return dist_mat;
+    }
+
     std::pair<matrix, sorted_matrix> fill_matrix_and_sort(
-        const double* const x, const double* const y,
+        const std::vector<double>& x, const std::vector<double>& y,
         const size_t count_point)
     {
         sorted_matrix sorted_edges(count_point, std::vector<std::pair<double, size_t>>(count_point));
@@ -40,6 +50,26 @@ namespace utils
                 }*/);
         }
         return { dist_mat, sorted_edges };
+    }
+
+    matrix fill_matrix_with_end_point(const std::vector<double>& x, const std::vector<double>& y)
+    {
+        matrix dist_mat = std::vector<std::vector<double>>(x.size(), std::vector<double>(x.size()));
+        for (size_t i = 0; i < x.size(); ++i)
+            for (size_t j = 0; j < x.size(); ++j)
+                dist_mat[i][j] = std::sqrt(sqr(x[i] - x[j]) + sqr(y[i] - y[j]));
+
+        for (size_t i = 1; i < x.size(); ++i)
+        {
+            double d1 = std::sqrt(sqr(x[i] - 500) + sqr(y[i] - 500));
+            double d2 = std::sqrt(sqr(x[i] + 500) + sqr(y[i] - 500));
+            double d3 = std::sqrt(sqr(x[i] - 500) + sqr(y[i] + 500));
+            double d4 = std::sqrt(sqr(x[i] + 500) + sqr(y[i] + 500));
+
+            dist_mat[i][0] = std::min(d1, std::min(d2, std::min(d3, d4)));
+        }
+
+        return dist_mat;
     }
 
     double length_rout(const std::vector<size_t>& rout, const matrix& dist_mat)
