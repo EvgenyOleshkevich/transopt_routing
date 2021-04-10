@@ -20,7 +20,11 @@ namespace TSP
     {
         void TSP_2_opt(std::vector<size_t>&, const matrix&);
 
+        void TSP_2_opt_fast(std::vector<size_t>&, const matrix&);
+
         void TSP_3_opt(std::vector<size_t>&, const matrix&);
+
+        void TSP_3_opt_fast(std::vector<size_t>&, const matrix&);
 
         void swap(std::vector<size_t>&, const matrix&);
 

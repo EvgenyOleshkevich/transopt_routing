@@ -101,7 +101,12 @@ void read_file()
         for (size_t i = 0; i < rout.size(); ++i)
             rout[i] = i + 1;
 
-        TSP::local_opt::TSP_2_opt(rout, dist_matrixes[i]);
+        unsigned int start_time = clock(); // начальное время
+        TSP::local_opt::TSP_3_opt_fast(rout, dist_matrixes[i]);
+        unsigned int end_time = clock(); // конечное время
+        unsigned int search_time = end_time - start_time; // искомое время
+        cout << "time: " << search_time << endl;
+
         TSP::local_opt::TSP_3_opt(rout, dist_matrixes[i]);
         TSP::local_opt::TSP_2_opt(rout, dist_matrixes[i]);
         TSP::local_opt::TSP_3_opt(rout, dist_matrixes[i]);
@@ -127,6 +132,8 @@ void read_file()
 // lenght: 186045
 // time : 94.158 sec
 
+
+// time: 259378
 int main()
 {
     unsigned int start_time = clock(); // начальное время

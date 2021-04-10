@@ -142,6 +142,45 @@ namespace TSP
             rout = best_rout;
         }
 
+        void TSP_2_opt_fast(std::vector<size_t>& rout, const matrix& dist_mat)
+        {
+            if (rout.size() < 3)
+                return;
+            auto best_len = utils::length_rout(rout, dist_mat);
+            auto best_rout = rout;
+            for (int i = 0; i < (int)rout.size() - 2; ++i)
+                for (int j = i + 1; j < (int)rout.size() - 1; ++j)
+                {
+                    size_t index = 0;
+
+                    for (int k = 0; k < i; ++k)
+                    {
+                        rout[index] = best_rout[k];
+                        ++index;
+                    }
+                    for (int k = j; k >= i; --k)
+                    {
+                        rout[index] = best_rout[k];
+                        ++index;
+                    }
+                    for (size_t k = j + 1; k < best_rout.size(); ++k)
+                    {
+                        rout[index] =  best_rout[k];
+                        ++index;
+                    }
+
+                    double lenght = dist_mat[0][rout[0]] + dist_mat[rout.back()][0];
+                    for (size_t k = 1; k < rout.size(); ++k)
+                        lenght += dist_mat[rout[k - 1]][rout[k]];
+                    if (best_len > lenght)
+                    {
+                        best_len = lenght;
+                        best_rout = rout;
+                    }
+                }
+            rout = best_rout;
+        }
+
         void TSP_3_opt(std::vector<size_t>& rout, const matrix& dist_mat)
         {
             if (rout.size() < 4)
@@ -249,7 +288,7 @@ namespace TSP
 
             for (size_t i = 0; i < rout.size() - 5; ++i)
                 for (size_t j = i + 2; j < rout.size() - 3; ++j)
-                    for (size_t k = j + 2; i < rout.size() - 1; ++i)
+                    for (size_t k = j + 2; k < rout.size() - 1; ++k)
                     {
                         std::vector<size_t> rout1;
                         std::vector<size_t> rout2;
@@ -290,6 +329,257 @@ namespace TSP
                         }
                     }
             rout = best_rout;
+        }
+
+        void TSP_3_opt_fast(std::vector<size_t>& rout, const matrix& dist_mat)
+        {
+            if (rout.size() < 4)
+                return;
+            auto best_len = utils::length_rout(rout, dist_mat);
+            double len = 0;
+            
+            // 3 ребра смежны
+            for (size_t i = 0; i < rout.size() - 4; ++i)
+            {
+                // swap(rout[i + 1], rout[i + 2]);
+                
+                len = best_len
+                    - dist_mat[rout[i]][rout[i + 1]]
+                    - dist_mat[rout[i + 1]][rout[i + 2]]
+                    - dist_mat[rout[i + 2]][rout[i + 3]]
+                    + dist_mat[rout[i]][rout[i + 2]]
+                    + dist_mat[rout[i + 2]][rout[i + 1]]
+                    + dist_mat[rout[i + 1]][rout[i + 3]];
+
+                if (best_len > len)
+                {
+                    best_len = len;
+                    std::swap(rout[i + 1], rout[i + 2]);
+                }
+            }
+
+            // on the ends:
+            {
+                len = best_len
+                    - dist_mat[0][rout[0]]
+                    - dist_mat[rout[0]][rout[1]]
+                    - dist_mat[rout[1]][rout[2]]
+                    + dist_mat[0][rout[1]]
+                    + dist_mat[rout[1]][rout[0]]
+                    + dist_mat[rout[0]][rout[2]];
+
+                if (best_len > len)
+                {
+                    best_len = len;
+                    std::swap(rout[0], rout[1]);
+                }
+
+                size_t end_index = rout.size() - 3;
+                len = best_len
+                    - dist_mat[rout[end_index]][rout[end_index + 1]]
+                    - dist_mat[rout[end_index + 1]][rout[end_index + 2]]
+                    - dist_mat[rout[end_index + 2]][0]
+                    + dist_mat[rout[end_index]][rout[end_index + 2]]
+                    + dist_mat[rout[end_index + 2]][rout[end_index + 1]]
+                    + dist_mat[rout[end_index + 1]][0];
+
+                if (best_len > len)
+                {
+                    best_len = len;
+                    std::swap(rout[end_index + 1], rout[end_index + 2]);
+                }
+            }
+
+            // 2 ребра смежны, пусть вторые 2
+            std::vector<size_t> rout1(rout.size());
+            std::vector<size_t> rout2(rout.size());
+            size_t index1 = 0;
+            size_t index2 = 0;
+            for (size_t i = 0; i < rout.size() - 4; ++i)
+                for (size_t j = i + 2; j < rout.size() - 1; ++j)
+                {
+                    index1 = 0;
+                    index2 = 0;
+
+                    for (size_t k = 0; k <= i; ++k)
+                    {
+                        rout1[index1] = rout[k];
+                        rout2[index2] = rout[k];
+                        ++index1;
+                        ++index2;
+                    }
+
+                    rout1[index1] = rout[j + 1];
+                    ++index1;
+                    for (size_t k = i + 1; k <= j; ++k)
+                    {
+                        rout1[index1] = rout[k];
+                        ++index1;
+                    }
+                    for (size_t k = j + 2; k < rout.size(); ++k)
+                    {
+                        rout1[index1] = rout[k];
+                        ++index1;
+                    }
+
+                    for (size_t k = j; k > i; --k)
+                    {
+                        rout2[index2] = rout[k];
+                        ++index2;
+                    }
+                    for (size_t k = j + 1; k < rout.size(); ++k)
+                    {
+                        rout2[index2] = rout[k];
+                        ++index2;
+                    }
+
+                    len = dist_mat[0][rout1[0]] + dist_mat[rout1.back()][0];
+                    for (size_t k = 1; k < rout.size(); ++k)
+                        len += dist_mat[rout1[k - 1]][rout1[k]];
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        rout = rout1;
+                    }
+
+                    len = dist_mat[0][rout2[0]] + dist_mat[rout2.back()][0];
+                    for (size_t k = 1; k < rout.size(); ++k)
+                        len += dist_mat[rout2[k - 1]][rout2[k]];
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        rout = rout2;
+                    }
+                }
+
+            // 2 ребра смежны, пусть первые 2
+
+            for (size_t j = 0; j < rout.size() - 1; ++j)
+                for (size_t i = j + 3; i < rout.size() - 4; ++i)
+                {
+                    index1 = 0;
+                    index2 = 0;
+
+                    for (size_t k = 0; k <= j; ++k)
+                    {
+                        rout1[index1] = rout[k];
+                        rout2[index2] = rout[k];
+                        ++index1;
+                        ++index2;
+                    }
+
+                    for (size_t k = j + 2; k <= i; ++k)
+                    {
+                        rout1[index1] = rout[k];
+                        ++index1;
+                    }
+                    rout1[index1] = rout[j + 1];
+                    ++index1;
+                    for (size_t k = i + 1; k < rout.size(); ++k)
+                    {
+                        rout1[index1] = rout[k];
+                        ++index1;
+                    }
+
+                    for (size_t k = i; k > j; --k)
+                    {
+                        rout2[index2] = rout[k];
+                        ++index2;
+                    }
+                    for (size_t k = i + 1; k < rout.size(); ++k)
+                    {
+                        rout2[index2] = rout[k];
+                        ++index2;
+                    }
+
+                    len = dist_mat[0][rout1[0]] + dist_mat[rout1.back()][0];
+                    for (size_t k = 1; k < rout.size(); ++k)
+                        len += dist_mat[rout1[k - 1]][rout1[k]];
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        rout = rout1;
+                    }
+
+                    len = dist_mat[0][rout2[0]] + dist_mat[rout2.back()][0];
+                    for (size_t k = 1; k < rout.size(); ++k)
+                        len += dist_mat[rout2[k - 1]][rout2[k]];
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        rout = rout2;
+                    }
+                }
+
+
+            // 3 ребра не смежны
+
+            for (size_t i = 0; i < rout.size() - 5; ++i)
+                for (size_t j = i + 2; j < rout.size() - 3; ++j)
+                    for (size_t k = j + 2; k < rout.size() - 1; ++k)
+                    {
+                        index1 = 0;
+                        index2 = 0;
+
+                        for (size_t l = 0; l <= i; ++l)
+                        {
+                            rout1[index1] = rout[l];
+                            rout2[index2] = rout[l];
+                            ++index1;
+                            ++index2;
+                        }
+
+                        for (size_t l = k; l >= j + 1; --l)
+                        {
+                            rout1[index1] = rout[l];
+                            ++index1;
+                        }
+                        for (size_t l = i + 1; l <= j; ++l)
+                        {
+                            rout1[index1] = rout[l];
+                            ++index1;
+                        }
+                        for (size_t l = k + 1; l < rout.size(); ++l)
+                        {
+                            rout1[index1] = rout[l];
+                            ++index1;
+                        }
+
+
+                        for (size_t l = j; l >= i + 1; --l)
+                        {
+                            rout2[index2] = rout[l];
+                            ++index2;
+                        }
+                        for (size_t l = k; l >= j + 1; --l)
+                        {
+                            rout2[index2] = rout[l];
+                            ++index2;
+                        }
+                        for (size_t l = k + 1; l < rout.size(); ++l)
+                        {
+                            rout2[index2] = rout[l];
+                            ++index2;
+                        }
+
+                        len = dist_mat[0][rout1[0]] + dist_mat[rout1.back()][0];
+                        for (size_t l = 1; l < rout.size(); ++l)
+                            len += dist_mat[rout1[l - 1]][rout1[l]];
+                        if (best_len > len)
+                        {
+                            best_len = len;
+                            rout = rout1;
+                        }
+
+                        len = dist_mat[0][rout2[0]] + dist_mat[rout2.back()][0];
+                        for (size_t l = 1; l < rout.size(); ++l)
+                            len += dist_mat[rout2[l - 1]][rout2[l]];
+                        if (best_len > len)
+                        {
+                            best_len = len;
+                            rout = rout2;
+                        }
+                    }
         }
 
         void swap(std::vector<size_t>& rout, const matrix& dist_mat)
