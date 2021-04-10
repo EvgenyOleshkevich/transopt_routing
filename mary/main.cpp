@@ -39,7 +39,7 @@ void c2()
     TSP::local_opt::TSP_3_opt(rout, dist_mat);
     TSP::local_opt::TSP_2_opt(rout, dist_mat);
     TSP::local_opt::TSP_3_opt(rout, dist_mat);
-    balancedVRP::VND_STS a(dist_mat, count_point, need_routs, 600, weight);
+    balancedVRP::VND_STS a(dist_mat, need_routs, 600, weight);
 
     std::vector<std::pair<size_t, double>> t;
     for (size_t v : rout)
@@ -87,12 +87,53 @@ void read_file()
     in.close();
 
     auto dist = utils::fill_matrix_with_end_point(x, y);
-    int asc = 0;
+
+    auto clusters  = balancedVRP::clustering::dichotomous_division(dist, 4);
+    auto dist_matrixes = balancedVRP::clustering::get_dist_inner_cluster(dist, clusters);
+    auto weights = balancedVRP::clustering::get_weight_inner_cluster(weight, clusters);
+    double lenght = 0;
+    for (size_t i = 0; i < dist_matrixes.size(); ++i) {
+        
+
+        balancedVRP::VND_STS a(dist_matrixes[i], 60, 24, weight);
+
+        vector<size_t> rout(clusters[i].size());
+        for (size_t i = 0; i < rout.size(); ++i)
+            rout[i] = i + 1;
+
+        TSP::local_opt::TSP_2_opt(rout, dist_matrixes[i]);
+        TSP::local_opt::TSP_3_opt(rout, dist_matrixes[i]);
+        TSP::local_opt::TSP_2_opt(rout, dist_matrixes[i]);
+        TSP::local_opt::TSP_3_opt(rout, dist_matrixes[i]);
+
+        std::vector<std::pair<size_t, double>> t;
+        for (size_t v : rout)
+        {
+            t.push_back({ v, weights[i][v] });
+        }
+
+        auto routs = a.calculate(t).first;
+
+        //auto routs = algorithms::clark_right::clark_right(dist_matrixes[i], dist_matrixes[i].size(), 60);
+        // auto osman = new Osman(dist_matrixes[i], dist_matrixes[i].size(), 60);
+        lenght += utils::length_routs(routs, dist_matrixes[i]);
+    }
+    cout << "lenght: " << lenght << endl;
 }
+
+// lenght: 146182
+// time : 506.847 sec
+
+// lenght: 186045
+// time : 94.158 sec
 
 int main()
 {
+    unsigned int start_time = clock(); // начальное время
     read_file();
+    unsigned int end_time = clock(); // конечное время
+    unsigned int search_time = end_time - start_time; // искомое время
+    cout << "time: " << search_time;
     return 0;
     srand((unsigned int)time(0));
     dist_mat = utils::fill_matrix(x, y, count_point);

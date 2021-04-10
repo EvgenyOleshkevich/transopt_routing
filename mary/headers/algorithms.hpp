@@ -65,11 +65,12 @@ namespace algorithms
             auto routs_start = init_routs(count_point);
             auto routs_end = init_routs(count_point);
             size_t count_routs = count_point - 1;
+            size_t sorted_index = 0;
             while (count_routs != need_routs)
             {
-                size_t i = (size_t)sotred_save_matrix[0][1];
-                size_t j = (size_t)sotred_save_matrix[0][2];
-                sotred_save_matrix.erase(sotred_save_matrix.begin());
+                size_t i = (size_t)sotred_save_matrix[sorted_index][1];
+                size_t j = (size_t)sotred_save_matrix[sorted_index][2];
+                ++sorted_index;
                 if (routs_start[j].empty() || routs_end[i].empty() || routs_end[i][0] == j)
                     continue; // проверка, что они из разных маршрутов
 
@@ -121,7 +122,7 @@ namespace algorithms
             
             size_t max_iter = (size_t)(340 + 0.000353 * 5 * utils::sqr((double)count_point * need_routs));
             fill_BSTM_RECM(routs, checker);
-
+            max_iter = 10;
             for (size_t i = 0; i < max_iter; ++i)
             {
                 auto index = get_max_free_BSTM(i, routs);

@@ -349,6 +349,41 @@ namespace balancedVRP
 			}
 			return clusters;
 		}
+	
+		std::vector<matrix> get_dist_inner_cluster(const matrix& dist_mat, const int_matrix& clusters)
+		{
+			std::vector<matrix> res;
+			for (size_t i = 0; i < clusters.size(); ++i) {
+				matrix cluster_dist_mat =
+					std::vector<std::vector<double>>(clusters[i].size() + 1,
+						std::vector<double>(clusters[i].size() + 1));
+
+				for (size_t j = 0; j < clusters[i].size(); ++j) {
+					cluster_dist_mat[j + 1][0] = dist_mat[clusters[i][j]][0];
+					cluster_dist_mat[0][j + 1] = dist_mat[0][clusters[i][j]];
+
+					for (size_t k = 0; k < clusters[i].size(); ++k)
+						cluster_dist_mat[j + 1][k + 1] = dist_mat[clusters[i][j]][clusters[i][k]];
+				}
+				res.push_back(cluster_dist_mat);
+			}
+			return res;
+		}
+
+		matrix get_weight_inner_cluster(const std::vector<double>& weight, const int_matrix& clusters)
+		{
+			matrix weights;
+			for (size_t i = 0; i < clusters.size(); ++i) {
+				auto cluster_weight = std::vector<double>(clusters[i].size()+1);
+				cluster_weight[0] = 0;
+
+				for (size_t j = 0; j < clusters[i].size(); ++j) {
+					cluster_weight[j + 1] = weight[clusters[i][j]];
+				}
+				weights.push_back(cluster_weight);
+			}
+			return weights;
+		}
 	}
 
 	int_matrix cutting_rout(const std::vector<size_t>& rout,
@@ -399,9 +434,9 @@ namespace balancedVRP
 	}
 
 
-	VND_STS::VND_STS(const matrix& dist_mat, const size_t count_point, const size_t need_routs
+	VND_STS::VND_STS(const matrix& dist_mat, const size_t need_routs
 		, const double capacity, const std::vector<double>& weight) :
-		dist_mat(dist_mat), count_point(count_point), need_routs(need_routs),
+		dist_mat(dist_mat), count_point(dist_mat.size()), need_routs(need_routs),
 		capacity(capacity), weight(weight), fict_vertex(count_point)
 	{
 		for (auto& vec : this->dist_mat)

@@ -32,6 +32,12 @@ namespace balancedVRP
 		std::vector<size_t> radian_sort(const std::vector<double>&, const std::vector<double>&, const size_t);
 		
 		int_matrix sweeping(const double* const, const double* const, const size_t, size_t);
+
+		// получение матрицы расстояние для каждого кластера
+		std::vector<matrix> get_dist_inner_cluster(const matrix&, const int_matrix&);
+
+		// получение весов для каждого кластера
+		matrix get_weight_inner_cluster(const std::vector<double>&, const int_matrix&);
 	}
 
 	int_matrix cutting_rout(const std::vector<size_t>&, const matrix&, size_t);
@@ -39,7 +45,7 @@ namespace balancedVRP
 	class VND_STS
 	{
 	public:
-		VND_STS(const matrix& dist_mat, const size_t count_point, const size_t need_routs
+		VND_STS(const matrix& dist_mat, const size_t need_routs
 			, const double capacity, const std::vector<double>& weight);
 
 		// can be faster without utils::length_rout(rout, dist_mat);
