@@ -40,6 +40,7 @@ namespace balancedVRP
 		matrix get_weight_inner_cluster(const std::vector<double>&, const int_matrix&);
 	}
 
+	// разрезание общего маршрута
 	int_matrix cutting_rout(const std::vector<size_t>&, const matrix&, size_t);
 
 	class VND_STS

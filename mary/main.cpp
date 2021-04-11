@@ -35,10 +35,10 @@ void c2()
     srand((unsigned int)time(0));
     dist_mat = utils::fill_matrix(x, y, count_point);
     auto rout = TSP::Lin_Kernighan::Lin_Kernighan(x, y, 51);
-    TSP::local_opt::TSP_2_opt(rout, dist_mat);
-    TSP::local_opt::TSP_3_opt(rout, dist_mat);
-    TSP::local_opt::TSP_2_opt(rout, dist_mat);
-    TSP::local_opt::TSP_3_opt(rout, dist_mat);
+    TSP::local_opt::opt_2(rout, dist_mat);
+    TSP::local_opt::opt_3(rout, dist_mat);
+    TSP::local_opt::opt_2(rout, dist_mat);
+    TSP::local_opt::opt_3(rout, dist_mat);
     balancedVRP::VND_STS a(dist_mat, need_routs, 600, weight);
 
     std::vector<std::pair<size_t, double>> t;
@@ -102,14 +102,14 @@ void read_file()
             rout[i] = i + 1;
 
         unsigned int start_time = clock(); // начальное время
-        TSP::local_opt::TSP_3_opt_fast(rout, dist_matrixes[i]);
+        TSP::local_opt::opt_3_fast(rout, dist_matrixes[i]);
         unsigned int end_time = clock(); // конечное время
         unsigned int search_time = end_time - start_time; // искомое время
         cout << "time: " << search_time << endl;
 
-        TSP::local_opt::TSP_3_opt(rout, dist_matrixes[i]);
-        TSP::local_opt::TSP_2_opt(rout, dist_matrixes[i]);
-        TSP::local_opt::TSP_3_opt(rout, dist_matrixes[i]);
+        TSP::local_opt::opt_3(rout, dist_matrixes[i]);
+        TSP::local_opt::opt_2(rout, dist_matrixes[i]);
+        TSP::local_opt::opt_3(rout, dist_matrixes[i]);
 
         std::vector<std::pair<size_t, double>> t;
         for (size_t v : rout)
@@ -133,11 +133,141 @@ void read_file()
 // time : 94.158 sec
 
 
-// time: 259378
+// time: 259378 2 opt
+// time:  98555 2 opt
+
+bool check(const vector<size_t> rout) {
+    vector<size_t> rout_checker(rout.size() - 1, 0);
+    bool check = rout[0] == 0 && rout[rout.size() - 1] == 0;
+    for (size_t i = 1; i < rout.size() - 1; ++i) {
+        ++rout_checker[rout[i]];
+        check &= rout_checker[rout[i]] == 1;
+        if (!check)
+        {
+            int c = i;
+            int b = rout[i];
+            int aa = rout_checker[rout[i]];
+            int a = 8932;
+
+        }
+    }
+    return check;
+}
+
+void opt_2_test()
+{
+/*
+    lenght: 79203.3
+    check : 1
+
+    opt_2 time : 62462
+    opt_2 check : 1
+    lenght : 11501.9
+
+    opt_2_fast time : 22152
+    opt_2_fast check : 1
+    lenght : 11501.9
+
+    opt_2_symmetrical time : 79
+    opt_2_symmetrical check : 1
+    lenght : 78120.1
+
+    opt_2_fast2 time : 94
+    opt_2_fast2 check : 1
+    lenght : 78120.1
+*/
+    x.clear();
+    y.clear();
+    weight.clear();
+
+    x.push_back(0);
+    y.push_back(0);
+    weight.push_back(0);
+    std::ifstream in("file.csv");
+    while (!in.eof())
+    {
+        string line;
+        getline(in, line);
+        double w, X, Y;
+        in >> w >> X >> Y;
+        x.push_back(X);
+        y.push_back(Y);
+        weight.push_back(w);
+    }
+
+    in.close();
+
+    auto dist = utils::fill_matrix_with_end_point(x, y);
+
+    auto clusters = balancedVRP::clustering::dichotomous_division(dist, 4);
+    auto dist_matrixes = balancedVRP::clustering::get_dist_inner_cluster(dist, clusters);
+    auto weights = balancedVRP::clustering::get_weight_inner_cluster(weight, clusters);
+    double lenght = 0;
+
+
+    vector<size_t> rout(clusters[0].size() + 2);
+    
+    rout[0] = 0;
+    rout[rout.size() - 1] = 0;
+    for (size_t i = 1; i < rout.size() - 1; ++i)
+        rout[i] = i;
+    cout << "lenght: " << utils::length_rout(rout, dist_matrixes[0]) << endl;
+    cout << "check: " << check(rout) << endl;
+
+
+    // opt_2
+    {
+        auto rout_test = rout;
+        unsigned int start_time = clock(); // начальное время
+        TSP::local_opt::opt_2(rout_test, dist_matrixes[0]);
+        unsigned int end_time = clock(); // конечное время
+        unsigned int search_time = end_time - start_time; // искомое время
+        cout << "opt_2 time: " << search_time << endl;
+        cout << "opt_2 check: " << check(rout_test) << endl;
+        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
+    }
+
+    // opt_2_fast
+    {
+        auto rout_test = rout;
+        unsigned int start_time = clock(); // начальное время
+        TSP::local_opt::opt_2_fast(rout_test, dist_matrixes[0]);
+        unsigned int end_time = clock(); // конечное время
+        unsigned int search_time = end_time - start_time; // искомое время
+        cout << "opt_2_fast time: " << search_time << endl;
+        cout << "opt_2_fast check: " << check(rout_test) << endl;
+        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
+    }
+
+    // opt_2_symmetrical
+    {
+        auto rout_test = rout;
+        unsigned int start_time = clock(); // начальное время
+        TSP::local_opt::opt_2_symmetrical(rout_test, dist_matrixes[0]);
+        unsigned int end_time = clock(); // конечное время
+        unsigned int search_time = end_time - start_time; // искомое время
+        cout << "opt_2_symmetrical time: " << search_time << endl;
+        cout << "opt_2_symmetrical check: " << check(rout_test) << endl;
+        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
+    }
+
+    // opt_2_fast2
+    {
+        auto rout_test = rout;
+        unsigned int start_time = clock(); // начальное время
+        TSP::local_opt::opt_2_fast2(rout_test, dist_matrixes[0]);
+        unsigned int end_time = clock(); // конечное время
+        unsigned int search_time = end_time - start_time; // искомое время
+        cout << "opt_2_fast2 time: " << search_time << endl;
+        cout << "opt_2_fast2 check: " << check(rout_test) << endl;
+        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
+    }
+}
+
 int main()
 {
     unsigned int start_time = clock(); // начальное время
-    read_file();
+    opt_2_test();
     unsigned int end_time = clock(); // конечное время
     unsigned int search_time = end_time - start_time; // искомое время
     cout << "time: " << search_time;
@@ -150,10 +280,10 @@ int main()
     auto TSP_opt_rout = routs_dichotomous_division;
     for (size_t i = 0; i < TSP_opt_rout.size(); ++i)
     {
-        TSP::local_opt::TSP_2_opt(TSP_opt_rout[i], dist_mat);
-        TSP::local_opt::TSP_3_opt(TSP_opt_rout[i], dist_mat);
-        TSP::local_opt::TSP_2_opt(TSP_opt_rout[i], dist_mat);
-        TSP::local_opt::TSP_3_opt(TSP_opt_rout[i], dist_mat);
+        TSP::local_opt::opt_2(TSP_opt_rout[i], dist_mat);
+        TSP::local_opt::opt_3(TSP_opt_rout[i], dist_mat);
+        TSP::local_opt::opt_2(TSP_opt_rout[i], dist_mat);
+        TSP::local_opt::opt_3(TSP_opt_rout[i], dist_mat);
     }
 
     cout << "dichotomous_division: lenght= " << utils::length_routs(TSP_opt_rout, dist_mat) << endl;

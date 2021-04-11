@@ -425,10 +425,10 @@ namespace balancedVRP
 
 		for (size_t i = 0; i < routs.size(); ++i)
 		{
-			TSP::local_opt::TSP_2_opt(routs[i], dist_mat);
-			TSP::local_opt::TSP_3_opt(routs[i], dist_mat);
-			TSP::local_opt::TSP_2_opt(routs[i], dist_mat);
-			TSP::local_opt::TSP_3_opt(routs[i], dist_mat);
+			TSP::local_opt::opt_2(routs[i], dist_mat);
+			TSP::local_opt::opt_3(routs[i], dist_mat);
+			TSP::local_opt::opt_2(routs[i], dist_mat);
+			TSP::local_opt::opt_3(routs[i], dist_mat);
 		}
 		return routs;
 	}
