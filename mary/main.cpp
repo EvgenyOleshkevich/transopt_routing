@@ -2,6 +2,7 @@
 #include <fstream>
 
 
+
 using namespace std;
 using namespace algorithms;
 
@@ -153,28 +154,32 @@ bool check(const vector<size_t> rout) {
     }
     return check;
 }
+#include <thread>
+#include <windows.h>
+#include <chrono>
+
 
 void opt_2_test()
 {
 /*
     lenght: 79203.3
-    check : 1
+    check: 1
 
-    opt_2 time : 62462
-    opt_2 check : 1
-    lenght : 11501.9
+    opt_2_symmetrical time: 1915
+    opt_2_symmetrical check: 1
+    lenght: 10144.1
 
-    opt_2_fast time : 22152
-    opt_2_fast check : 1
-    lenght : 11501.9
+    opt_2_fast2 time: 2266
+    opt_2_fast2 check: 1
+    lenght: 10144.1
 
-    opt_2_symmetrical time : 79
-    opt_2_symmetrical check : 1
-    lenght : 78120.1
+    opt_2 time: 64725
+    opt_2 check: 1
+    lenght: 11501.9
 
-    opt_2_fast2 time : 94
-    opt_2_fast2 check : 1
-    lenght : 78120.1
+    opt_2_fast time: 23676
+    opt_2_fast check: 1
+    lenght: 11501.9
 */
     x.clear();
     y.clear();
@@ -214,6 +219,31 @@ void opt_2_test()
     cout << "lenght: " << utils::length_rout(rout, dist_matrixes[0]) << endl;
     cout << "check: " << check(rout) << endl;
 
+    // opt_2_symmetrical
+    {
+        auto rout_test = rout;
+        unsigned int start_time = clock(); // начальное время
+        for (size_t i = 0; i < 10; ++i)
+            TSP::local_opt::opt_2_symmetrical(rout_test, dist_matrixes[0]);
+        unsigned int end_time = clock(); // конечное время
+        unsigned int search_time = end_time - start_time; // искомое время
+        cout << "opt_2_symmetrical time: " << search_time << endl;
+        cout << "opt_2_symmetrical check: " << check(rout_test) << endl;
+        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
+    }
+
+    // opt_2_fast2
+    {
+        auto rout_test = rout;
+        unsigned int start_time = clock(); // начальное время
+        for (size_t i = 0; i < 10; ++i)
+            TSP::local_opt::opt_2_fast2(rout_test, dist_matrixes[0]);
+        unsigned int end_time = clock(); // конечное время
+        unsigned int search_time = end_time - start_time; // искомое время
+        cout << "opt_2_fast2 time: " << search_time << endl;
+        cout << "opt_2_fast2 check: " << check(rout_test) << endl;
+        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
+    }
 
     // opt_2
     {
@@ -239,35 +269,121 @@ void opt_2_test()
         cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
     }
 
-    // opt_2_symmetrical
-    {
-        auto rout_test = rout;
-        unsigned int start_time = clock(); // начальное время
-        TSP::local_opt::opt_2_symmetrical(rout_test, dist_matrixes[0]);
-        unsigned int end_time = clock(); // конечное время
-        unsigned int search_time = end_time - start_time; // искомое время
-        cout << "opt_2_symmetrical time: " << search_time << endl;
-        cout << "opt_2_symmetrical check: " << check(rout_test) << endl;
-        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
-    }
 
-    // opt_2_fast2
-    {
-        auto rout_test = rout;
-        unsigned int start_time = clock(); // начальное время
-        TSP::local_opt::opt_2_fast2(rout_test, dist_matrixes[0]);
-        unsigned int end_time = clock(); // конечное время
-        unsigned int search_time = end_time - start_time; // искомое время
-        cout << "opt_2_fast2 time: " << search_time << endl;
-        cout << "opt_2_fast2 check: " << check(rout_test) << endl;
-        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
-    }
 }
 
+void opt_2_test2()
+{
+    /*
+            opt_2_best_parallel time: 21216
+        opt_2_best_parallel check: 1
+        lenght: 1.11833e+06
+
+        opt_2_best time: 35940
+        opt_2_best check: 1
+        lenght: 1.11536e+06
+    */
+    x.clear();
+    y.clear();
+    weight.clear();
+
+    x.push_back(0);
+    y.push_back(0);
+    weight.push_back(0);
+    std::ifstream in("file.csv");
+    while (!in.eof())
+    {
+        string line;
+        getline(in, line);
+        double w, X, Y;
+        in >> w >> X >> Y;
+        x.push_back(X);
+        y.push_back(Y);
+        weight.push_back(w);
+    }
+
+    in.close();
+
+    auto dist = utils::fill_matrix_with_end_point(x, y);
+
+
+    double lenght = 0;
+
+
+    vector<size_t> rout(dist.size() + 1);
+
+    rout[0] = 0;
+    rout[rout.size() - 1] = 0;
+    for (size_t i = 1; i < rout.size() - 1; ++i)
+        rout[i] = i;
+    cout << "lenght: " << utils::length_rout(rout, dist) << endl;
+    cout << "check: " << check(rout) << endl;
+
+    // opt_2_symmetrical
+    //{
+    //    auto rout_test = rout;
+    //    unsigned int start_time = clock(); // начальное время
+    //    for (size_t i = 0; i < 2; ++i)
+    //        TSP::local_opt::opt_2_symmetrical(rout_test, dist);
+    //    unsigned int end_time = clock(); // конечное время
+    //    unsigned int search_time = end_time - start_time; // искомое время
+    //    cout << endl << "opt_2_symmetrical time: " << search_time << endl;
+    //    cout << "opt_2_symmetrical check: " << check(rout_test) << endl;
+    //    cout << "lenght: " << utils::length_rout(rout_test, dist) << endl;
+    //}
+
+        // opt_2_best
+    {
+        auto rout_test = rout;
+        unsigned int start_time = clock(); // начальное время
+        
+        TSP::local_opt::opt_2_best_parallel(rout_test, dist);
+        unsigned int end_time = clock(); // конечное время
+        unsigned int search_time = end_time - start_time; // искомое время
+        cout << endl << "opt_2_best_parallel time: " << search_time << endl;
+        cout << "opt_2_best_parallel check: " << check(rout_test) << endl;
+        cout << "lenght: " << utils::length_rout(rout_test, dist) << endl;
+    }
+
+    // opt_2_best
+    {
+        auto rout_test = rout;
+        unsigned int start_time = clock(); // начальное время
+        TSP::local_opt::opt_2_best_step(rout_test, dist);
+        unsigned int end_time = clock(); // конечное время
+        unsigned int search_time = end_time - start_time; // искомое время
+        cout << endl << "opt_2_best time: " << search_time << endl;
+        cout << "opt_2_best check: " << check(rout_test) << endl;
+        cout << "lenght: " << utils::length_rout(rout_test, dist) << endl;
+    }
+
+
+}
+
+int di = 0;
+void out()
+{
+    for (long long i = 0; i < 5000000000; ++i)
+        int y = 9;
+}
+
+void out2()
+{
+    for (long long i = 0; i < 5000000000; ++i)
+        int y = 9;
+}
+// time: 13865
+// time: 24614
 int main()
 {
+    /*auto t1 = std::thread(&out);
+    auto t2 = std::thread(&out2);
+    t1.join();
+    t2.join();
+    out();
+    out2();*/
     unsigned int start_time = clock(); // начальное время
-    opt_2_test();
+    opt_2_test2();
     unsigned int end_time = clock(); // конечное время
     unsigned int search_time = end_time - start_time; // искомое время
     cout << "time: " << search_time;

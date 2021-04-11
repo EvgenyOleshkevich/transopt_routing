@@ -7,6 +7,7 @@
 #include <random>
 
 
+
 using matrix = std::vector<std::vector<double>>;
 using sorted_matrix = std::vector<std::vector<std::pair<double, size_t>>>;
 using int_matrix = std::vector<std::vector<size_t>>;

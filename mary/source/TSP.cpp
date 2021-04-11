@@ -3,6 +3,9 @@
 #include "../headers/utils.hpp"
 #include <math.h>
 #include <stack>
+#include <thread>
+#include <windows.h>
+#include <chrono>
 
 namespace TSP
 {
@@ -186,47 +189,44 @@ namespace TSP
             size_t segment1 = 0;
             size_t segment2 = 0;
             double best_len = utils::length_rout(rout, dist_mat);
-            double base_len = best_len;
-            auto best_rout = rout;
             // intial and final position are fixed (initial/final node remains 0)
-            for (int a = 1; a < rout.size() - 2; a++)
+            for (int i = 1; i < rout.size() - 2; i++)
             {
-                size_t A1 = rout[a - 1];
-                size_t A2 = rout[a];
-                for (int b = a + 1; b < rout.size() - 1; b++)
+                size_t A1 = rout[i - 1];
+                size_t A2 = rout[i];
+                for (int j = i + 1; j < rout.size() - 1; j++)
                 {
-                    size_t B1 = rout[b];
-                    size_t B2 = rout[b + 1];
-                    double len = base_len + dist_mat[A1][B1] + dist_mat[A2][B2]
-                         - dist_mat[A1][A2] - dist_mat[B1][B2];
+                    size_t B1 = rout[j];
+                    size_t B2 = rout[j + 1];
+                    double len = best_len
+                        + dist_mat[A1][B1] + dist_mat[A2][B2]
+                        - dist_mat[A1][A2] - dist_mat[B1][B2];
                     if (best_len > len)
                     {
                         best_len = len;
-                        segment1 = a;
-                        segment2 = b;
+                        segment1 = i;
+                        segment2 = j;
+
+                        size_t index = 0;
+                        auto best_rout = rout;
+
+                        for (int k = 0; k < segment1; ++k)
+                        {
+                            rout[index] = best_rout[k];
+                            ++index;
+                        }
+                        for (int k = segment2; k >= segment1; --k)
+                        {
+                            rout[index] = best_rout[k];
+                            ++index;
+                        }
+                        for (size_t k = segment2 + 1; k < best_rout.size(); ++k)
+                        {
+                            rout[index] = best_rout[k];
+                            ++index;
+                        }
                     }
                 }
-            }
-
-            if (segment2 == 0)
-                return;
-
-            size_t index = 0;
-
-            for (int k = 0; k < segment1; ++k)
-            {
-                rout[index] = best_rout[k];
-                ++index;
-            }
-            for (int k = segment2; k >= segment1; --k)
-            {
-                rout[index] = best_rout[k];
-                ++index;
-            }
-            for (size_t k = segment2 + 1; k < best_rout.size(); ++k)
-            {
-                rout[index] = best_rout[k];
-                ++index;
             }
         }
 
@@ -235,22 +235,19 @@ namespace TSP
             size_t segment1 = 0;
             size_t segment2 = 0;
             double best_len = utils::length_rout(rout, dist_mat);
-            double base_len = best_len;
-            double A_B_reverse_len = 0;
-            auto best_rout = rout;
             // intial and final position are fixed (initial/final node remains 0)
             for (int i = 1; i < rout.size() - 2; i++)
             {
                 size_t A1 = rout[i - 1];
                 size_t A2 = rout[i];
-                A_B_reverse_len = 0;
+                double A_B_reverse_len = 0;
                 for (int j = i + 1; j < rout.size() - 1; j++)
                 {
-                    
                     size_t B1 = rout[j];
                     size_t B2 = rout[j + 1];
-                    A_B_reverse_len += dist_mat[B1][B1 - 1] - dist_mat[B1 - 1][B1];
-                    double len = base_len + A_B_reverse_len
+                    A_B_reverse_len += dist_mat[B1][rout[j - 1]] - dist_mat[rout[j - 1]][B1];
+
+                    double len = best_len + A_B_reverse_len
                         + dist_mat[A1][B1] + dist_mat[A2][B2]
                         - dist_mat[A1][A2] - dist_mat[B1][B2];
                     if (best_len > len)
@@ -258,29 +255,196 @@ namespace TSP
                         best_len = len;
                         segment1 = i;
                         segment2 = j;
+
+                        size_t index = 0;
+                        auto best_rout = rout;
+
+                        for (int k = 0; k < segment1; ++k)
+                        {
+                            rout[index] = best_rout[k];
+                            ++index;
+                        }
+                        for (int k = segment2; k >= segment1; --k)
+                        {
+                            rout[index] = best_rout[k];
+                            ++index;
+                        }
+                        for (size_t k = segment2 + 1; k < best_rout.size(); ++k)
+                        {
+                            rout[index] = best_rout[k];
+                            ++index;
+                        }
+                    }
+                }
+            }
+        }
+
+        void opt_2_best_step(std::vector<size_t>& rout, const matrix& dist_mat)
+        {
+
+            size_t segment1 = 0;
+            size_t segment2 = 0;
+            double best_len = utils::length_rout(rout, dist_mat);
+            for (size_t i = 0; i < 20; ++i) {
+                // intial and final position are fixed (initial/final node remains 0)
+                for (int i = 1; i < rout.size() - 2; i++)
+                {
+                    size_t A1 = rout[i - 1];
+                    size_t A2 = rout[i];
+                    double A_B_reverse_len = 0;
+                    for (int j = i + 1; j < rout.size() - 1; j++)
+                    {
+                        size_t B1 = rout[j];
+                        size_t B2 = rout[j + 1];
+                        A_B_reverse_len += dist_mat[B1][rout[j - 1]] - dist_mat[rout[j - 1]][B1];
+
+                        double len = best_len + A_B_reverse_len
+                            + dist_mat[A1][B1] + dist_mat[A2][B2]
+                            - dist_mat[A1][A2] - dist_mat[B1][B2];
+                        if (best_len > len)
+                        {
+                            best_len = len;
+                            segment1 = i;
+                            segment2 = j;
+
+
+                        }
+                    }
+                }
+
+                size_t index = 0;
+                auto best_rout = rout;
+
+                for (int k = 0; k < segment1; ++k)
+                {
+                    rout[index] = best_rout[k];
+                    ++index;
+                }
+                for (int k = segment2; k >= segment1; --k)
+                {
+                    rout[index] = best_rout[k];
+                    ++index;
+                }
+                for (size_t k = segment2 + 1; k < best_rout.size(); ++k)
+                {
+                    rout[index] = best_rout[k];
+                    ++index;
+                }
+            }
+        }
+
+        class OPT_2_parallel
+        {
+        public:
+            OPT_2_parallel(const std::vector<size_t>& rout, const matrix& dist_mat) :
+                rout(rout), dist_mat(dist_mat) {
+                best_len1 = utils::length_rout(rout, dist_mat);
+                best_len2 = best_len1;
+            }
+
+            size_t segment1 = 0;
+            size_t segment2 = 0;
+            size_t segment3 = 0;
+            size_t segment4 = 0;
+            double best_len1 = 0;
+            double best_len2 = 0;
+            void f1()
+            {
+                int max = rout.size() / t - 1;
+                for (int i = 1; i < max; i++)
+                {
+                    size_t A1 = rout[i - 1];
+                    size_t A2 = rout[i];
+                    double A_B_reverse_len = 0;
+                    for (int j = i + 1; j < rout.size() - 1; j++)
+                    {
+                        size_t B1 = rout[j];
+                        size_t B2 = rout[j + 1];
+                        A_B_reverse_len += dist_mat[B1][rout[j - 1]] - dist_mat[rout[j - 1]][B1];
+
+                        double len = best_len1 + A_B_reverse_len
+                            + dist_mat[A1][B1] + dist_mat[A2][B2]
+                            - dist_mat[A1][A2] - dist_mat[B1][B2];
+                        if (best_len1 > len)
+                        {
+                            best_len1 = len;
+                            segment1 = i;
+                            segment2 = j;
+                        }
                     }
                 }
             }
 
-            if (segment2 == 0)
-                return;
+            void f2()
+            {
+                int max = rout.size() / t;
+                for (int i = max; i < rout.size() - 2; i++)
+                {
+                    size_t A1 = rout[i - 1];
+                    size_t A2 = rout[i];
+                    double A_B_reverse_len = 0;
+                    for (int j = i + 1; j < rout.size() - 1; j++)
+                    {
+                        size_t B1 = rout[j];
+                        size_t B2 = rout[j + 1];
+                        A_B_reverse_len += dist_mat[B1][rout[j - 1]] - dist_mat[rout[j - 1]][B1];
 
-            size_t index = 0;
+                        double len = best_len2 + A_B_reverse_len
+                            + dist_mat[A1][B1] + dist_mat[A2][B2]
+                            - dist_mat[A1][A2] - dist_mat[B1][B2];
+                        if (best_len2 > len)
+                        {
+                            best_len2 = len;
+                            segment3 = i;
+                            segment4 = j;
+                        }
+                    }
+                }
+            }
+        private:
+            const std::vector<size_t>& rout;
+            const matrix& dist_mat;
+            const double t = 3.4;
 
-            for (int k = 0; k < segment1; ++k)
-            {
-                rout[index] = best_rout[k];
-                ++index;
-            }
-            for (int k = segment2; k >= segment1; --k)
-            {
-                rout[index] = best_rout[k];
-                ++index;
-            }
-            for (size_t k = segment2 + 1; k < best_rout.size(); ++k)
-            {
-                rout[index] = best_rout[k];
-                ++index;
+        };
+
+        void opt_2_best_parallel(std::vector<size_t>& rout, const matrix& dist_mat)
+        {
+            OPT_2_parallel A(rout, dist_mat);
+            for (size_t i = 0; i < 20; ++i) {
+                auto t1 = std::thread(&OPT_2_parallel::f1, A);
+                auto t2 = std::thread(&OPT_2_parallel::f2, A);
+                t1.join();
+                t2.join();
+
+                if (A.best_len1 < A.best_len2)
+                {
+                    A.segment1 = A.segment3;
+                    A.segment2 = A.segment4;
+                }
+
+                int segment1 = A.segment1;
+                int segment2 = A.segment2;
+
+
+                size_t index = 0;
+                auto best_rout = rout;
+
+                for (int k = 0; k < segment1; ++k)
+                {
+                    rout[index] = best_rout[k];
+                    ++index;
+                }
+                for (int k = segment2; k >= segment1; --k)
+                {
+                    rout[index] = best_rout[k];
+                    ++index;
+                }
+                for (size_t k = segment2 + 1; k < best_rout.size(); ++k)
+                {
+                    rout[index] = best_rout[k];
+                    ++index;
+                }
             }
         }
 
