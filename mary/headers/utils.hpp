@@ -21,7 +21,9 @@ namespace utils
 
     matrix fill_matrix(const std::vector<double>&, const std::vector<double>&, const size_t);
 
-    std::pair < matrix, sorted_matrix> fill_matrix_and_sort(const std::vector<double>&, const std::vector<double>&, const size_t);
+    std::pair < matrix, sorted_matrix> fill_matrix_and_sort(const std::vector<double>&, const std::vector<double>&);
+
+    sorted_matrix fill_matrix_and_sort(const std::vector<double>&, const std::vector<double>&, const matrix&);
 
     matrix fill_matrix_with_end_point(const std::vector<double>&, const std::vector<double>&);
 

@@ -13,7 +13,7 @@ namespace TSP
     {
         std::vector<size_t> Lin_Kernighan(const std::vector<double>& x, const std::vector<double>& y, const size_t size)
         {
-            auto p = utils::fill_matrix_and_sort(x, y, size);
+            auto p = utils::fill_matrix_and_sort(x, y);
             auto dist_mat = p.first;
             auto sorted_edges = p.second;
 

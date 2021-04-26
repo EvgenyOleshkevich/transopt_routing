@@ -384,6 +384,60 @@ namespace balancedVRP
 			}
 			return weights;
 		}
+
+		std::vector<int> get_number_cluster_by_vertex(const int_matrix& clusters)
+		{
+			size_t size = 1;
+			for (const auto& cluster : clusters)
+				size += cluster.size();
+
+			std::vector<int> vertex_x_cluster(size, -1);
+
+			for (size_t i = 0; i < clusters.size(); ++i)
+				for (const auto vertex : clusters[i])
+					if (vertex_x_cluster[vertex] == -1)
+						vertex_x_cluster[vertex] = i;
+					else
+					{
+						int y = 0;
+						int e = 0;
+					}
+
+			for (size_t i = 1; i < vertex_x_cluster.size(); ++i)
+				if (vertex_x_cluster[i] < 0 || vertex_x_cluster[i] > 6)
+				{
+					int y = 0;
+					int e = 0;
+				}
+
+			return vertex_x_cluster;
+		}
+	}
+
+	namespace project
+	{
+		int_matrix clusters_with_multiple_duplicates(const int_matrix& clusters, const std::vector<size_t>& frequence)
+		{
+			int_matrix res = clusters;
+
+			for (size_t i = 0; i < clusters.size(); ++i)
+				for (size_t j = 0; j < clusters[i].size(); ++j)
+					if (frequence[clusters[i][j]] == 2) // clusters.size() - max period
+					{
+						res[(i + 2) % clusters.size()].push_back(clusters[i][j]);
+						res[(i + 4) % clusters.size()].push_back(clusters[i][j]);
+						res[(i + 6) % clusters.size()].push_back(clusters[i][j]);
+					}
+					else if (frequence[clusters[i][j]] == 3) {
+						res[(i + 3) % clusters.size()].push_back(clusters[i][j]);
+						res[(i + 6) % clusters.size()].push_back(clusters[i][j]);
+					}
+					else if (frequence[clusters[i][j]] == 4) {
+						res[(i + 4) % clusters.size()].push_back(clusters[i][j]);
+					}
+
+			return res;
+		}
 	}
 
 	int_matrix cutting_rout(const std::vector<size_t>& rout,

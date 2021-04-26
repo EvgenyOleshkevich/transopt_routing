@@ -31,9 +31,12 @@ namespace utils
     }
 
     std::pair<matrix, sorted_matrix> fill_matrix_and_sort(
-        const std::vector<double>& x, const std::vector<double>& y,
-        const size_t count_point)
+        const std::vector<double>& x, const std::vector<double>& y)
     {
+        if (x.size() != y.size())
+            return {matrix(), sorted_matrix() };
+
+        const size_t count_point = x.size();
         sorted_matrix sorted_edges(count_point, std::vector<std::pair<double, size_t>>(count_point));
         matrix dist_mat = std::vector<std::vector<double>>(count_point, std::vector<double>(count_point));
         for (size_t i = 0; i < count_point; ++i)
@@ -52,8 +55,32 @@ namespace utils
         return { dist_mat, sorted_edges };
     }
 
+    sorted_matrix fill_matrix_and_sort(const std::vector<double>& x, const std::vector<double>& y,
+        const matrix& dist_mat)
+    {
+        if (x.size() != y.size() || y.size() != dist_mat.size())
+            return sorted_matrix() ;
+
+        const size_t count_point = x.size();
+        sorted_matrix sorted_edges(count_point, std::vector<std::pair<double, size_t>>(count_point));
+        for (size_t i = 0; i < count_point; ++i)
+        {
+            for (size_t j = 0; j < count_point; ++j)
+                sorted_edges[i][j] = { dist_mat[i][j] , j };
+            std::sort(sorted_edges[i].begin(), sorted_edges[i].end()/*,
+                [](const std::pair<double, size_t>& a, const std::pair<double, size_t>& b)
+                {
+                    return a.first > b.first;
+                }*/);
+        }
+        return sorted_edges;
+    }
+
     matrix fill_matrix_with_end_point(const std::vector<double>& x, const std::vector<double>& y)
     {
+        if (x.size() != y.size())
+            return matrix();
+
         matrix dist_mat = std::vector<std::vector<double>>(x.size(), std::vector<double>(x.size()));
         for (size_t i = 0; i < x.size(); ++i)
             for (size_t j = 0; j < x.size(); ++j)

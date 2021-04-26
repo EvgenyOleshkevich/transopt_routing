@@ -38,6 +38,14 @@ namespace balancedVRP
 
 		// получение весов для каждого кластера
 		matrix get_weight_inner_cluster(const std::vector<double>&, const int_matrix&);
+
+		// получение номер кластера для каждой вершины
+		std::vector<int> get_number_cluster_by_vertex(const int_matrix&);
+	}
+
+	namespace project
+	{
+		int_matrix clusters_with_multiple_duplicates(const int_matrix&, const std::vector<size_t>&);
 	}
 
 	// разрезание общего маршрута
