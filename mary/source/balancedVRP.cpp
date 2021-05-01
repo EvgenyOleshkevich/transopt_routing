@@ -841,16 +841,11 @@ namespace balancedVRP
 #pragma endregion
 
 #pragma region Ant
-	Ant::Ant(const matrix& dist_mat, const vector<Transport>& transports, const vector<double>& weights) :
+	Ant_algorithm::Ant_algorithm(const matrix& dist_mat, const vector<Transport>& transports, const vector<double>& weights) :
 		dist_mat(dist_mat), transports(transports), weights(weights) 
 	{
 		std::random_device rd;
 		mersenne_rand = std::mt19937(rd());
-	}
-
-	pair<int_matrix, matrix> Ant::calculate(vec_int_float& vertexes)
-	{
-		return { int_matrix(), matrix() };
 	}
 
 #pragma endregion

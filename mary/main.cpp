@@ -152,8 +152,16 @@ void Test(vector<double>& vec) {
     vec.clear();
 }
 
+
+void Ant_test()
+{
+
+}
+
 int main()
 {
+    Ant_test();
+    return;
     read_file();
     read_transports();
     dist_mat = utils::fill_matrix_with_end_point(x, y);
