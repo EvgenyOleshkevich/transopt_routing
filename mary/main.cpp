@@ -2,17 +2,35 @@
 #include <fstream>
 #include <thread>
 #include <windows.h>
-#include <chrono>
+
+
+
 
 using namespace std;
 using namespace algorithms;
+using namespace balancedVRP;
 
 vector<double> x;
 vector<double> y;
 vector<double> weights;
 vector<size_t> frequence;
 vector<vector<double>> dist_mat;
+vector<Transport> transports;
 
+void read_transports()
+{
+    std::ifstream in("transport.csv");
+    string line;
+    getline(in, line);
+    while (!in.eof())
+    {
+        double volume, cost_start, cost_by_dist;
+        size_t count;
+        in >> volume >> cost_start >> cost_by_dist >> count;
+        transports.push_back({ volume, cost_start, cost_by_dist, count });
+    }
+    in.close();
+}
 
 void read_file()
 {
@@ -130,10 +148,36 @@ void cluster_test2()
     //    5441.18
 }
 
+void Test(vector<double>& vec) {
+    vec.clear();
+}
+
 int main()
 {
     read_file();
-    cluster_test2();
+    read_transports();
+    dist_mat = utils::fill_matrix_with_end_point(x, y);
+    Test(dist_mat[0]);
+    int y = 0;
+    return 0;
+    read_transports();
+    //srand((unsigned int)time(0));
+    srand(0);
+    rand();
+
+    std::random_device rd;
+    std::mt19937 mersenne(rd());
+
+    for (int count = 0; count < 48; ++count)
+    {
+        std::cout << mersenne() << "\t";
+
+        // Если вывели 5 чисел, то вставляем символ новой строки
+        if ((count + 1) % 5 == 0)
+            std::cout << "\n";
+    }
+    //read_file();
+    //cluster_test2();
 
     return 0;
 }

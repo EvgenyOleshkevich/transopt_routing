@@ -5,13 +5,18 @@
 #include <algorithm>
 #include <ctime>
 #include <random>
+#include <cmath>
+#include <stdexcept>
+#include <chrono> // для std::random_device и std::mt19937
 
 
+using std::vector;
+using std::pair;
+using matrix = vector<vector<double>>;
+using sorted_matrix = vector<vector<pair<double, size_t>>>;
+using int_matrix = vector<vector<size_t>>;
+using vec_int_float = vector<pair<size_t, double>>;
 
-using matrix = std::vector<std::vector<double>>;
-using sorted_matrix = std::vector<std::vector<std::pair<double, size_t>>>;
-using int_matrix = std::vector<std::vector<size_t>>;
-using vec_int_float = std::vector<std::pair<size_t, double>>;
 
 namespace utils
 {
@@ -19,27 +24,29 @@ namespace utils
 
     matrix fill_matrix(const double* const, const double* const, const size_t);
 
-    matrix fill_matrix(const std::vector<double>&, const std::vector<double>&, const size_t);
+    matrix fill_matrix(const vector<double>&, const vector<double>&, const size_t);
 
-    std::pair < matrix, sorted_matrix> fill_matrix_and_sort(const std::vector<double>&, const std::vector<double>&);
+    pair < matrix, sorted_matrix> fill_matrix_and_sort(const vector<double>&, const vector<double>&);
 
-    sorted_matrix fill_matrix_and_sort(const std::vector<double>&, const std::vector<double>&, const matrix&);
+    sorted_matrix fill_matrix_and_sort(const vector<double>&, const vector<double>&, const matrix&);
 
-    matrix fill_matrix_with_end_point(const std::vector<double>&, const std::vector<double>&);
+    matrix fill_matrix_with_end_point(const vector<double>&, const vector<double>&);
 
-    double length_rout(const std::vector<size_t>&, const matrix&);
+    double length_rout(const vector<size_t>&, const matrix&);
+
+    double length_rout_0(const vector<size_t>&, const matrix&);
 
     double length_rout(const vec_int_float&, const matrix&);
 
-    double length_rout(const std::vector<size_t>&, const matrix&, const size_t, const size_t);
+    double length_rout(const vector<size_t>&, const matrix&, const size_t, const size_t);
 
-    double length_rout_before(const std::vector<size_t>&, const matrix&, const size_t);
+    double length_rout_before(const vector<size_t>&, const matrix&, const size_t);
 
-    double length_rout_after(const std::vector<size_t>&, const matrix&, const size_t);
+    double length_rout_after(const vector<size_t>&, const matrix&, const size_t);
 
     double length_rout_fict(const vec_int_float&, const matrix&, const size_t);
 
-    double length_rout_fict(const std::vector<size_t>&, const matrix&, const size_t);
+    double length_rout_fict(const vector<size_t>&, const matrix&, const size_t);
 
     double length_routs(const int_matrix&, const matrix&);
 

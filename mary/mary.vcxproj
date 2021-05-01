@@ -141,6 +141,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="source\algorithms.cpp" />
     <ClCompile Include="source\balancedVRP.cpp" />
+    <ClCompile Include="source\old_test.cpp" />
     <ClCompile Include="source\TSP.cpp" />
     <ClCompile Include="source\mary.cpp" />
     <ClCompile Include="source\utils.cpp" />

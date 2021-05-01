@@ -20,20 +20,26 @@ namespace TSP
     {
         void opt_2(std::vector<size_t>&, const matrix&);
 
+        // require zero vertex
         void opt_2_fast(std::vector<size_t>&, const matrix&);
 
         void opt_2_symmetrical(std::vector<size_t>&, const matrix&);
 
+        // require zero vertex
         void opt_2_fast2(std::vector<size_t>&, const matrix&);
         
+        // require zero vertex
         void opt_2_best_step(std::vector<size_t>&, const matrix&);
 
+        // require zero vertex
         void opt_2_best_parallel(std::vector<size_t>&, const matrix&);
 
         void opt_3(std::vector<size_t>&, const matrix&);
 
+        // require zero vertex
         void opt_3_fast(std::vector<size_t>&, const matrix&);
 
+        // require zero vertex
         void opt_3_fast2(std::vector<size_t>&, const matrix&);
 
         void swap(std::vector<size_t>&, const matrix&);

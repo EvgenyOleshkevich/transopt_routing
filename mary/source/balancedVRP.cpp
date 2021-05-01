@@ -6,10 +6,10 @@ namespace balancedVRP
 {
 	namespace clustering
 	{
-		std::pair<int, int> two_farthest_vertex(const matrix& dist_mat,
-			const std::vector<size_t>& vertexes) {
+		pair<int, int> two_farthest_vertex(const matrix& dist_mat,
+			const vector<size_t>& vertexes) {
 			double max_dist = 0;
-			std::pair<int, int> res = { 0, 1 };
+			pair<int, int> res = { 0, 1 };
 			for (size_t i = 0; i < vertexes.size(); ++i)
 				for (size_t j = i + 1; j < vertexes.size(); ++j)
 					if (max_dist < dist_mat[vertexes[i]][vertexes[j]])
@@ -22,7 +22,7 @@ namespace balancedVRP
 		}
 
 		void update_dist_to_cluaster(const matrix& dist_mat,
-			const std::vector<size_t>& vertexes, std::vector<double>& dist_to_cluaster,
+			const vector<size_t>& vertexes, vector<double>& dist_to_cluaster,
 			const int first, const int second)
 		{
 			for (int i = 0; i < vertexes.size(); ++i)
@@ -33,7 +33,7 @@ namespace balancedVRP
 
 		int_matrix dichotomous_division(const matrix& dist_mat, const int clusters)
 		{
-			std::vector<size_t> vertexes(dist_mat.size() - 1);
+			vector<size_t> vertexes(dist_mat.size() - 1);
 			for (size_t i = 1; i < dist_mat.size(); i++)
 				vertexes[i - 1] = i;
 			return dichotomous_division(dist_mat, vertexes, clusters, vertexes.size() / clusters);
@@ -41,12 +41,12 @@ namespace balancedVRP
 
 
 		int_matrix dichotomous_division(const matrix& dist_mat,
-			const std::vector<size_t>& vertexes, const int clusters, const int cluster_size)
+			const vector<size_t>& vertexes, const int clusters, const int cluster_size)
 		{
 			int k1 = clusters / 2;
 			int k2 = clusters / 2 + clusters % 2;
 
-			std::vector<double> dist_to_cluaster(vertexes.size());
+			vector<double> dist_to_cluaster(vertexes.size());
 			for (size_t i = 0; i < dist_to_cluaster.size(); i++)
 				dist_to_cluaster[i] = (double)INT_MAX - 1;
 			auto pair = two_farthest_vertex(dist_mat, vertexes);
@@ -56,8 +56,8 @@ namespace balancedVRP
 			dist_to_cluaster[first] = (double)INT_MAX + 1;
 			dist_to_cluaster[second] = (double)INT_MAX + 1;
 
-			std::vector<size_t> first_cluster = { vertexes[first] };
-			std::vector<size_t> second_cluster = { vertexes[second] };
+			vector<size_t> first_cluster = { vertexes[first] };
+			vector<size_t> second_cluster = { vertexes[second] };
 
 			while (vertexes.size() - first_cluster.size() > k2 * (cluster_size + 1) ||
 				first_cluster.size() < k1 * cluster_size)
@@ -129,8 +129,8 @@ namespace balancedVRP
 			return res1;
 		}
 
-		double demand_of_vertex(const std::vector<double>& weights,
-			const std::vector<size_t>& vertexes)
+		double demand_of_vertex(const vector<double>& weights,
+			const vector<size_t>& vertexes)
 		{
 			double sum = 0;
 			for (const size_t v : vertexes)
@@ -139,18 +139,18 @@ namespace balancedVRP
 		}
 
 		int_matrix dichotomous_division_weight(const matrix& dist_mat,
-			const std::vector<double>& weights, const double capacity,
+			const vector<double>& weights, const double capacity,
 			const size_t count_cluster)
 		{
-			std::vector<size_t> vertexes(dist_mat.size() - 1);
+			vector<size_t> vertexes(dist_mat.size() - 1);
 			for (size_t i = 1; i < dist_mat.size(); i++)
 				vertexes[i - 1] = i;
 			return dichotomous_division_weight(dist_mat, weights, vertexes, capacity, count_cluster, true);
 		}
 
 		int_matrix dichotomous_division_weight(const matrix& dist_mat,
-			const std::vector<double>& weights,
-			const std::vector<size_t>& vertexes,
+			const vector<double>& weights,
+			const vector<size_t>& vertexes,
 			const double capacity, const size_t count_cluster, const bool can_reduce)
 		{
 			double demand = demand_of_vertex(weights, vertexes);
@@ -165,7 +165,7 @@ namespace balancedVRP
 				return dichotomous_division_weight(dist_mat, weights,
 					vertexes, capacity, count_cluster - 1, can_reduce);
 
-			std::vector<double> dist_to_cluaster(vertexes.size());
+			vector<double> dist_to_cluaster(vertexes.size());
 			for (size_t i = 0; i < dist_to_cluaster.size(); i++)
 				dist_to_cluaster[i] = (double)INT_MAX - 1;
 			auto pair = two_farthest_vertex(dist_mat, vertexes);
@@ -175,8 +175,8 @@ namespace balancedVRP
 			dist_to_cluaster[first] = (double)INT_MAX + 1;
 			dist_to_cluaster[second] = (double)INT_MAX + 1;
 
-			std::vector<size_t> first_cluster = { vertexes[first] };
-			std::vector<size_t> second_cluster = { vertexes[second] };
+			vector<size_t> first_cluster = { vertexes[first] };
+			vector<size_t> second_cluster = { vertexes[second] };
 			double demand1 = weights[vertexes[first]];
 			double demand2 = weights[vertexes[second]];
 
@@ -292,10 +292,10 @@ namespace balancedVRP
 		}
 
 
-		std::vector<size_t> radian_sort(const std::vector<double>& x, const std::vector<double>& y, size_t size)
+		vector<size_t> radian_sort(const vector<double>& x, const vector<double>& y, size_t size)
 		{
 			--size;
-			matrix points(size, std::vector<double>(4));
+			matrix points(size, vector<double>(4));
 			for (size_t i = 0; i < size; ++i)
 			{
 				if (abs(x[i + 1]) < 0.000001 && abs(y[i + 1]) < 0.000001)
@@ -314,7 +314,7 @@ namespace balancedVRP
 
 			std::sort(points.begin(), points.end());
 
-			auto res = std::vector<size_t>(size);
+			auto res = vector<size_t>(size);
 			for (size_t i = 0; i < size; ++i)
 				res[i] = points[i][3];
 			return res;
@@ -322,7 +322,7 @@ namespace balancedVRP
 		
 		int_matrix sweeping(const double* const x, const double* const y, const size_t size, size_t count_clusters)
 		{
-			matrix points(size, std::vector<double>(4));
+			matrix points(size, vector<double>(4));
 			for (size_t i = 0; i < size; ++i)
 			{
 				points[i][0] = std::atan2(x[i + 1], y[i + 1]);
@@ -337,7 +337,7 @@ namespace balancedVRP
 
 			while (points.size() > 0)
 			{
-				std::vector<size_t> cluster;
+				vector<size_t> cluster;
 				size_t size_cluster = points.size() / count_clusters;
 				--count_clusters;
 				for (size_t i = 0; i < size_cluster; ++i)
@@ -350,13 +350,13 @@ namespace balancedVRP
 			return clusters;
 		}
 	
-		std::vector<matrix> get_dist_inner_cluster(const matrix& dist_mat, const int_matrix& clusters)
+		vector<matrix> get_dist_inner_cluster(const matrix& dist_mat, const int_matrix& clusters)
 		{
-			std::vector<matrix> res;
+			vector<matrix> res;
 			for (size_t i = 0; i < clusters.size(); ++i) {
 				matrix cluster_dist_mat =
-					std::vector<std::vector<double>>(clusters[i].size() + 1,
-						std::vector<double>(clusters[i].size() + 1));
+					vector<vector<double>>(clusters[i].size() + 1,
+						vector<double>(clusters[i].size() + 1));
 
 				for (size_t j = 0; j < clusters[i].size(); ++j) {
 					cluster_dist_mat[j + 1][0] = dist_mat[clusters[i][j]][0];
@@ -370,11 +370,11 @@ namespace balancedVRP
 			return res;
 		}
 
-		matrix get_weight_inner_cluster(const std::vector<double>& weight, const int_matrix& clusters)
+		matrix get_weight_inner_cluster(const vector<double>& weight, const int_matrix& clusters)
 		{
 			matrix weights;
 			for (size_t i = 0; i < clusters.size(); ++i) {
-				auto cluster_weight = std::vector<double>(clusters[i].size()+1);
+				auto cluster_weight = vector<double>(clusters[i].size() + 1);
 				cluster_weight[0] = 0;
 
 				for (size_t j = 0; j < clusters[i].size(); ++j) {
@@ -385,19 +385,19 @@ namespace balancedVRP
 			return weights;
 		}
 
-		std::vector<int> get_number_cluster_by_vertex(const int_matrix& clusters)
+		vector<int> get_number_cluster_by_vertex(const int_matrix& clusters)
 		{
 			size_t size = 1;
 			for (const auto& cluster : clusters)
 				size += cluster.size();
 
-			std::vector<int> vertex_x_cluster(size, -1);
+			vector<int> vertex_x_cluster(size, -1);
 
 			for (size_t i = 0; i < clusters.size(); ++i)
 				for (const auto vertex : clusters[i])
-					if (vertex_x_cluster[vertex] == -1)
-						vertex_x_cluster[vertex] = i;
-					else
+					//if (vertex_x_cluster[vertex] == -1)
+					vertex_x_cluster[vertex] = i;
+					/*else
 					{
 						int y = 0;
 						int e = 0;
@@ -408,7 +408,7 @@ namespace balancedVRP
 				{
 					int y = 0;
 					int e = 0;
-				}
+				}*/
 
 			return vertex_x_cluster;
 		}
@@ -416,7 +416,7 @@ namespace balancedVRP
 
 	namespace project
 	{
-		int_matrix clusters_with_multiple_duplicates(const int_matrix& clusters, const std::vector<size_t>& frequence)
+		int_matrix clusters_with_multiple_duplicates(const int_matrix& clusters, const vector<size_t>& frequence)
 		{
 			int_matrix res = clusters;
 
@@ -440,7 +440,7 @@ namespace balancedVRP
 		}
 	}
 
-	int_matrix cutting_rout(const std::vector<size_t>& rout,
+	int_matrix cutting_rout(const vector<size_t>& rout,
 		const matrix& dist_mat, size_t count_rout)
 	{
 		using namespace utils;
@@ -450,7 +450,7 @@ namespace balancedVRP
 		for (size_t i = count_rout; i > 1; --i)
 		{
 			size_t size_rout = count_points / i;
-			std::vector<size_t> new_rout1;
+			vector<size_t> new_rout1;
 			for (size_t j = 0; j < size_rout; ++j)
 			{
 				new_rout1.push_back(routs[0].back());
@@ -458,9 +458,9 @@ namespace balancedVRP
 			}
 			if (count_points % i > 0)
 			{
-				std::vector<size_t> new_rout2(new_rout1);
+				vector<size_t> new_rout2(new_rout1);
 				new_rout2.push_back(routs[0].back());
-				std::vector<size_t> rout0(routs[0]);
+				vector<size_t> rout0(routs[0]);
 				rout0.pop_back();
 				auto len1 = length_rout(new_rout1, dist_mat) + length_rout(routs[0], dist_mat);
 				auto len2 = length_rout(new_rout2, dist_mat) + length_rout(rout0, dist_mat);
@@ -487,9 +487,9 @@ namespace balancedVRP
 		return routs;
 	}
 
-
+#pragma region VND_STS
 	VND_STS::VND_STS(const matrix& dist_mat, const size_t need_routs
-		, const double capacity, const std::vector<double>& weight) :
+		, const double capacity, const vector<double>& weight) :
 		dist_mat(dist_mat), count_point(dist_mat.size()), need_routs(need_routs),
 		capacity(capacity), weight(weight), fict_vertex(count_point)
 	{
@@ -497,20 +497,20 @@ namespace balancedVRP
 		{
 			vec.push_back(0);
 		}
-		this->dist_mat.push_back(std::vector<double>(fict_vertex + 1, 0));
+		this->dist_mat.push_back(vector<double>(fict_vertex + 1, 0));
 	}
 
-	std::pair<int_matrix, matrix> VND_STS::dynamic_decode(const vec_int_float& vertexes)
+	pair<int_matrix, matrix> VND_STS::dynamic_decode(const vec_int_float& vertexes)
 	{
-		std::vector < size_t> init_rout = { vertexes[0].first };
+		vector < size_t> init_rout = { vertexes[0].first };
 		double lenght = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
-		std::vector<std::pair<double, int>> F = { {lenght , -1} }; // F(0);
+		vector<pair<double, int>> F = { {lenght , -1} }; // F(0);
 		// lenght of routs, index for restore routs
 
 		for (size_t i = 1; i < vertexes.size(); ++i)
 		{
 			double weight = 0;
-			std::vector <size_t> rout;
+			vector <size_t> rout;
 			F.push_back({ INT_MAX, i - 1 });
 			for (int j = i; j > 0; --j)
 			{
@@ -535,8 +535,8 @@ namespace balancedVRP
 		int i = F.size() - 1;
 		do
 		{
-			std::vector <size_t> rout;
-			std::vector <double> rout_weight;
+			vector <size_t> rout;
+			vector <double> rout_weight;
 			for (int j = i; j > F[i].second; --j)
 			{
 				rout.push_back(vertexes[j].first);
@@ -551,13 +551,13 @@ namespace balancedVRP
 		return { routs, routs_weight };
 	}
 
-	std::pair<int_matrix, matrix> VND_STS::greedy_decode(const vec_int_float& vertexes)
+	pair<int_matrix, matrix> VND_STS::greedy_decode(const vec_int_float& vertexes)
 	{
 		int_matrix routs;
 		matrix routs_weight;
 
-		std::vector<size_t> rout;
-		std::vector<double> rout_weight;
+		vector<size_t> rout;
+		vector<double> rout_weight;
 		double w = 0;
 		for (size_t i = 0; i < vertexes.size(); ++i)
 		{
@@ -571,8 +571,8 @@ namespace balancedVRP
 				--i;
 				routs.push_back(rout);
 				routs_weight.push_back(rout_weight);
-				rout = std::vector<size_t>();
-				rout_weight = std::vector<double>();
+				rout = vector<size_t>();
+				rout_weight = vector<double>();
 			}
 			else {
 				rout_weight.push_back(vertexes[i].second);
@@ -587,15 +587,15 @@ namespace balancedVRP
 
 	double VND_STS::dynamic_decode_fast(const vec_int_float& vertexes)
 	{
-		std::vector < size_t> init_rout = { vertexes[0].first };
+		vector < size_t> init_rout = { vertexes[0].first };
 		double lenght = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
-		std::vector<std::pair<double, int>> F = { {lenght , -1} }; // F(0);
+		vector<pair<double, int>> F = { {lenght , -1} }; // F(0);
 		// lenght of routs, index for restore routs
 
 		for (size_t i = 1; i < vertexes.size(); ++i)
 		{
 			double weight = 0;
-			std::vector <size_t> rout;
+			vector <size_t> rout;
 			F.push_back({ INT_MAX, i - 1 });
 			for (int j = i; j >= 0; --j)
 			{
@@ -621,7 +621,7 @@ namespace balancedVRP
 	double VND_STS::greedy_decode_fast(const vec_int_float& vertexes)
 	{
 		double lenght = 0;
-		std::vector<size_t> rout;
+		vector<size_t> rout;
 		double w = 0;
 		for (size_t i = 0; i < vertexes.size(); ++i)
 		{
@@ -633,7 +633,7 @@ namespace balancedVRP
 				w -= vertexes[i].second + capacity;
 				--i;
 				lenght += utils::length_rout_fict(rout, dist_mat, fict_vertex);
-				rout = std::vector<size_t>();
+				rout = vector<size_t>();
 			}
 		}
 		lenght += utils::length_rout_fict(rout, dist_mat, fict_vertex);
@@ -642,15 +642,15 @@ namespace balancedVRP
 
 	void VND_STS::dynamic_decode_add_fict(vec_int_float& vertexes)
 	{
-		std::vector < size_t> init_rout = { vertexes[0].first };
+		vector < size_t> init_rout = { vertexes[0].first };
 		double lenght = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
-		std::vector<std::pair<double, int>> F = { {lenght , -1} }; // F(0);
+		vector<pair<double, int>> F = { {lenght , -1} }; // F(0);
 		// lenght of routs, index for restore routs
 
 		for (size_t i = 1; i < vertexes.size(); ++i)
 		{
 			double weight = 0;
-			std::vector <size_t> rout;
+			vector <size_t> rout;
 			F.push_back({ INT_MAX, i - 1 });
 			for (int j = i; j > 0; --j)
 			{
@@ -682,7 +682,7 @@ namespace balancedVRP
 			{
 				++j;
 				vertexes.emplace(vertexes.begin() + j,
-					std::pair<size_t, double>(fict_vertex, capacity - w));
+					pair<size_t, double>(fict_vertex, capacity - w));
 			}
 			i = F[i].second;
 		} while (i > 0);
@@ -799,7 +799,7 @@ namespace balancedVRP
 		return best_lenght;
 	}
 
-	std::pair<int_matrix, matrix> VND_STS::calculate(vec_int_float& vertexes)
+	pair<int_matrix, matrix> VND_STS::calculate(vec_int_float& vertexes)
 	{
 		vec_int_float best_vertexes = vertexes;
 		double best_lenght = dynamic_decode_fast(vertexes);
@@ -838,4 +838,21 @@ namespace balancedVRP
 
 		return dynamic_decode(vertexes);
 	}
+#pragma endregion
+
+#pragma region Ant
+	Ant::Ant(const matrix& dist_mat, const vector<Transport>& transports, const vector<double>& weights) :
+		dist_mat(dist_mat), transports(transports), weights(weights) 
+	{
+		std::random_device rd;
+		mersenne_rand = std::mt19937(rd());
+	}
+
+	pair<int_matrix, matrix> Ant::calculate(vec_int_float& vertexes)
+	{
+		return { int_matrix(), matrix() };
+	}
+
+#pragma endregion
+
 }
