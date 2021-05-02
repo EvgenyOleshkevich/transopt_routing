@@ -88,7 +88,7 @@ namespace utils
 
         for (size_t i = 1; i < x.size(); ++i)
         {
-            double extra_dist = 200;
+            double extra_dist = 10;
             double d1 = std::sqrt(sqr(x[i] - (x[0] + extra_dist)) + sqr(y[i] - (y[0] + extra_dist)));
             double d2 = std::sqrt(sqr(x[i] - (x[0] - extra_dist)) + sqr(y[i] - (y[0] + extra_dist)));
             double d3 = std::sqrt(sqr(x[i] - (x[0] + extra_dist)) + sqr(y[i] - (y[0] - extra_dist)));

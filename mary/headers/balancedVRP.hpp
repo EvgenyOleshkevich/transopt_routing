@@ -5,7 +5,8 @@
 #include <algorithm>
 #include <ctime>
 #include <random>
-#include "../headers/utils.hpp"
+#include "../headers/TSP.hpp"
+//#include "../headers/utils.hpp"
 
 namespace balancedVRP
 {
@@ -127,8 +128,8 @@ namespace balancedVRP
 			double max_weight = max_weight_vertex();
 
 			unsigned int start_time = clock();
-			unsigned int cur_time = start_time;
-			unsigned int prev_cur_time = start_time;
+			//unsigned int cur_time = start_time;
+			//unsigned int prev_cur_time = start_time;
 			while (true)
 			{
 				fill_pheromone();
@@ -195,14 +196,18 @@ namespace balancedVRP
 				// 130-131
 				calcalate_pheromone(routs);
 				unsigned int cur_time = clock();
-				unsigned int diff = cur_time - prev_cur_time;
-				prev_cur_time = cur_time;
-				std::cout << diff << std::endl;
-				if (cur_time - start_time > 60000)
+				//unsigned int diff = cur_time - prev_cur_time;
+				//prev_cur_time = cur_time;
+				//std::cout << diff << std::endl;
+				if (cur_time - start_time > 30000)
 					break;
 			}
 
-			return { best_res,best_lenght };
+			for (size_t i = 0; i < best_res.size(); ++i)
+				for (size_t j = 0; j < best_res[i].size(); ++j)
+					TSP::local_opt::opt_2_fast2(best_res[i][j], dist_mat);
+
+			return { best_res,length_roust(best_res)};
 		}
 
 	private:
@@ -216,7 +221,7 @@ namespace balancedVRP
 		//const double first_step_decrease = 0.05;
 		const double alpha = 1;
 		const double beta = 4;
-		const size_t count_iter_inner = 50;
+		const size_t count_iter_inner = 10;
 
 		const double evaporation_rate = 0.8; // коэфициент испарения
 		//const double addition_pheromone_rate = 0.8; // коэфициент добавленяи феромона

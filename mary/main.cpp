@@ -164,7 +164,7 @@ bool check_matrix(const vector<int_matrix>& routs, const size_t size)
     vector<size_t> used(size, 0);
     for (const int_matrix& rout_mat : routs)
     {
-        cout << "new type" << endl;
+        //cout << "new type" << endl;
         for (const vector<size_t>& rout : rout_mat)
         {
             cout << "[" ;
