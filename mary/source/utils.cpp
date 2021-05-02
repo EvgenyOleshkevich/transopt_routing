@@ -88,10 +88,11 @@ namespace utils
 
         for (size_t i = 1; i < x.size(); ++i)
         {
-            double d1 = std::sqrt(sqr(x[i] - 500) + sqr(y[i] - 500));
-            double d2 = std::sqrt(sqr(x[i] + 500) + sqr(y[i] - 500));
-            double d3 = std::sqrt(sqr(x[i] - 500) + sqr(y[i] + 500));
-            double d4 = std::sqrt(sqr(x[i] + 500) + sqr(y[i] + 500));
+            double extra_dist = 200;
+            double d1 = std::sqrt(sqr(x[i] - (x[0] + extra_dist)) + sqr(y[i] - (y[0] + extra_dist)));
+            double d2 = std::sqrt(sqr(x[i] - (x[0] - extra_dist)) + sqr(y[i] - (y[0] + extra_dist)));
+            double d3 = std::sqrt(sqr(x[i] - (x[0] + extra_dist)) + sqr(y[i] - (y[0] - extra_dist)));
+            double d4 = std::sqrt(sqr(x[i] - (x[0] - extra_dist)) + sqr(y[i] - (y[0] - extra_dist)));
 
             dist_mat[i][0] = std::min(d1, std::min(d2, std::min(d3, d4)));
         }

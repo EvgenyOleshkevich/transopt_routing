@@ -102,8 +102,9 @@ namespace balancedVRP
 		{
 			vector<size_t> rout;
 			double remain_volume;
-			const size_t transport_type;
+			size_t transport_type;
 			size_t current_pos;
+			bool is_last; // для определения нужно ли после его заполнения пускать нового
 		};
 
 		struct Calc_data
@@ -120,24 +121,37 @@ namespace balancedVRP
 		{
 			double best_lenght = UINT32_MAX;
 			vector<int_matrix> best_res;
-			fill_pheromone();
+
 
 			double min_weight = min_weight_vertex();
+			double max_weight = max_weight_vertex();
 
 			unsigned int start_time = clock();
+			unsigned int cur_time = start_time;
+			unsigned int prev_cur_time = start_time;
 			while (true)
 			{
-
+				fill_pheromone();
 
 				vector<int_matrix> routs(transports.size());
 				for (size_t iter = 1; iter < count_iter_inner; ++iter) {
 
 					Calc_data data = fill_data();
-					vector<int_matrix> res;
+					vector<int_matrix> res(transports.size());
 
 					for (size_t used = 1; used < weights.size(); ++used)
 					{
+						if (used == weights.size() - 1)
+						{
+							int y = 0;
+						}
 						auto trans_vertex = get_next_step(data);
+
+						if (trans_vertex.second == 0)
+						{
+							get_next_step_sharing(data);
+						}
+
 						size_t trans = trans_vertex.first;
 						size_t vertex = trans_vertex.second;
 						data.ants[trans].current_pos = vertex;
@@ -147,20 +161,25 @@ namespace balancedVRP
 
 						size_t transport_type = data.ants[trans].transport_type;
 
-						if (data.transport_remain[transport_type] > 0
-							&& data.ants[trans].remain_volume / transports[transport_type].capacity > criteria_start_ant)
+						if (data.ants[trans].is_last
+							&& data.transport_remain[transport_type] > 0
+							&& data.ants[trans].remain_volume <= max_weight)
 						{
+							data.ants[trans].is_last = false;
+							--data.transport_remain[transport_type];
 							data.ants.push_back({
 								vector<size_t>(1, 0),
 								transports[transport_type].capacity,
 								transport_type,
-								0 });
+								0 ,
+								true });
 						}
 
 						if (data.ants[trans].remain_volume < min_weight) {
 							data.ants[trans].rout.push_back(0);
 							routs[transport_type].push_back(data.ants[trans].rout);
 							res[transport_type].push_back(data.ants[trans].rout);
+							data.ants.erase(data.ants.begin() + trans);
 						}
 					}
 					for (Ant& ant: data.ants)
@@ -174,12 +193,15 @@ namespace balancedVRP
 
 					if (best_lenght > lenght) {
 						best_lenght = lenght;
-						best_lenght = res;
+						best_res = res;
 					}
 				}
-
+				// 130-131
 				calcalate_pheromone(routs);
 				unsigned int cur_time = clock();
+				unsigned int diff = cur_time - prev_cur_time;
+				prev_cur_time = cur_time;
+				std::cout << diff << std::endl;
 				if (cur_time - start_time > 60000)
 					break;
 			}
@@ -198,23 +220,33 @@ namespace balancedVRP
 		//const double first_step_decrease = 0.05;
 		const double alpha = 1;
 		const double beta = 4;
-		const size_t count_iter_inner = 5;
+		const size_t count_iter_inner = 50;
 
 		const double evaporation_rate = 0.8; // коэфициент испарения
-		const double addition_pheromone_rate = 0.8; // коэфициент добавленяи феромона
+		//const double addition_pheromone_rate = 0.8; // коэфициент добавленяи феромона
 		const double Q_rate = 5; // коэфициент добавленяи феромона
-		const double criteria_start_ant = 0.8;
-		const double criteria_close_ant = 0.99;
+		//const double criteria_start_ant = 0.3;
+		//const double criteria_close_ant = 0.99;
 		std::mt19937 mersenne_rand;
 
 		double min_weight_vertex() const
 		{
 			double min = weights[1];
 			for (size_t i = 2; i < weights.size(); ++i)
-				if (min < weights[i])
+				if (min > weights[i])
 					min = weights[i];
 
 			return min;
+		}
+
+		double max_weight_vertex() const
+		{
+			double max = weights[1];
+			for (size_t i = 2; i < weights.size(); ++i)
+				if (max < weights[i])
+					max = weights[i];
+
+			return max;
 		}
 
 		void fill_pheromone() {
@@ -244,8 +276,8 @@ namespace balancedVRP
 
 			for (size_t i = 0; i < transports.size(); ++i)
 			{
-				data.transport_remain.push_back(transports[i].count - 1);
-				data.ants.push_back({ vector<size_t>(1, 0), transports[i].capacity, i, 0 });
+				data.transport_remain[i] = transports[i].count - 1;
+				data.ants.push_back({ vector<size_t>(1, 0), transports[i].capacity, i, 0 , true });
 			}
 
 			data.vertex_used[0] = 1;
@@ -281,16 +313,23 @@ namespace balancedVRP
 		{
 			double sum = 0;
 
-			auto cost_move = vector<vector<double>>(transports.size(), vector<double>(data.vertex_used.size(), 0));
+			auto cost_move = vector<vector<double>>(data.ants.size(), vector<double>(data.vertex_used.size(), 0));
 			for (size_t trans = 0; trans < data.ants.size(); ++trans)
 			{
 				const Ant& ant = data.ants[trans];
 				size_t pos = ant.current_pos;
-				for (size_t i = 0; i < data.vertex_used.size(); ++i)
-					if (data.vertex_used[i] == 0 && ant.remain_volume > weights[i])
-					{
-						cost_move[trans][i] = pow(pheromone_mat[ant.transport_type][pos][i], alpha)
-							* pow(1 / dist_mat[pos][i] * transports[ant.transport_type].cost_by_dist, beta);
+				for (size_t i = 1; i < data.vertex_used.size(); ++i)
+					if (data.vertex_used[i] == 0
+						&& ant.remain_volume > weights[i]) {
+
+						if (dist_mat[pos][i] > EPS)
+							cost_move[trans][i] = pow(pheromone_mat[ant.transport_type][pos][i], alpha)
+							* pow(1 / (dist_mat[pos][i] * transports[ant.transport_type].cost_by_dist), beta);
+						else
+						{
+							return { trans , i };
+
+						}
 						sum += cost_move[trans][i];
 					}
 			}
@@ -299,14 +338,46 @@ namespace balancedVRP
 			double sum_after = 0;
 
 			for (size_t trans = 0; trans < data.ants.size(); ++trans)
-				for (size_t i = 0; i < data.vertex_used.size(); ++i)
+				for (size_t i = 1; i < data.vertex_used.size(); ++i)
 				{
 					sum_after += cost_move[trans][i];
 					if (sum_after > rand_value)
 						return { trans , i };
 				}
-			
-			throw new std::runtime_error("rand_value is bigger sum weight");
+
+			return { 0 , 0 };
+		}
+
+		pair<vector<size_t>, size_t> get_next_step_sharing(const Calc_data& data)
+		{
+			vector<size_t> used_trans;
+			size_t vertex = 0;
+			for (size_t i = 1; i < data.vertex_used.size(); ++i)
+				if (data.vertex_used[i] == 0)
+				{
+					vertex = i;
+					break;
+				}
+			double weight = weights[vertex];
+			vector<pair<double, size_t>> unused(data.ants.size());
+
+			for (size_t trans = 0; trans < data.ants.size(); ++trans)
+			{
+				const Ant& ant = data.ants[trans];
+				unused[trans].first = ant.remain_volume * pow(pheromone_mat[ant.transport_type][ant.current_pos][vertex], alpha)
+					* pow(1 / (dist_mat[ant.current_pos][vertex] * transports[ant.transport_type].cost_by_dist), beta);
+				unused[trans].second = trans;
+			}
+			std::sort(unused.begin(), unused.end());
+
+			for (int i = unused.size() - 1; i > 0; --i)
+			{
+				weight -= data.ants[unused[i].second].remain_volume;
+				used_trans.push_back(unused[i].second);
+				if (weight <= 0)
+					break;
+			}
+			return { used_trans , vertex };
 		}
 
 		double length_roust(vector<int_matrix> routs)

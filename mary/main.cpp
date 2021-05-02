@@ -19,7 +19,7 @@ vector<Transport> transports;
 
 void read_transports()
 {
-    std::ifstream in("transport.csv");
+    std::ifstream in("data_transport_test.csv");
     string line;
     getline(in, line);
     while (!in.eof())
@@ -42,10 +42,13 @@ void read_file()
     y.push_back(0);
     weights.push_back(0);
     frequence.push_back(0);
-    std::ifstream in("cpp_data.csv");
+    std::ifstream in("data_vertex_test.csv");
     string line;
     getline(in, line);
     double s = 0;
+    double X_mean = 0;
+    double Y_mean = 0;
+    
     while (!in.eof())
     {
         double freq, w, X, Y;
@@ -53,9 +56,13 @@ void read_file()
         frequence.push_back(freq);
         x.push_back(X);
         y.push_back(Y);
+        X_mean += X;
+        Y_mean += Y;
         weights.push_back(w);
         s += w;
     }
+    x[0] = X_mean / (x.size() - 1);
+    y[0] = Y_mean / (y.size() - 1);
     cout << "sum volume: " << s << endl;
     in.close();
 }
@@ -152,16 +159,51 @@ void Test(vector<double>& vec) {
     vec.clear();
 }
 
+bool check_matrix(const vector<int_matrix>& routs, const size_t size)
+{
+    vector<size_t> used(size, 0);
+    for (const int_matrix& rout_mat : routs)
+    {
+        cout << "new type" << endl;
+        for (const vector<size_t>& rout : rout_mat)
+        {
+            cout << "[" ;
+            for (const size_t vertex : rout)
+            {
+                ++used[vertex];
+                cout << vertex << ", ";
+            }
+            cout << 0 << "]," << endl;
+        }
+    }
+
+    for (size_t i = 1; i < used.size(); ++i)
+    {
+        if (used[i] != 1) {
+            int fff = 3;
+            int fdff = 3;
+            return false;
+        }
+    }
+    return true;
+}
 
 void Ant_test()
 {
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix_with_end_point(x, y);
 
+    balancedVRP::Ant_algorithm ant(dist_mat, transports, weights);
+    auto mat_len = ant.calculate();
+    cout << "lenght: " << mat_len.second << endl;
+    cout << "check: " << check_matrix(mat_len.first, dist_mat.size()) << endl;
 }
 
 int main()
 {
     Ant_test();
-    return;
+    return 0;
     read_file();
     read_transports();
     dist_mat = utils::fill_matrix_with_end_point(x, y);

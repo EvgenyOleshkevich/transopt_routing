@@ -16,6 +16,7 @@ using matrix = vector<vector<double>>;
 using sorted_matrix = vector<vector<pair<double, size_t>>>;
 using int_matrix = vector<vector<size_t>>;
 using vec_int_float = vector<pair<size_t, double>>;
+constexpr double EPS = 0.000001;
 
 
 namespace utils
