@@ -141,23 +141,19 @@ namespace balancedVRP
 
 					for (size_t used = 1; used < weights.size(); ++used)
 					{
-						if (used == weights.size() - 1)
-						{
-							int y = 0;
-						}
 						auto trans_vertex = get_next_step(data);
 
-						if (trans_vertex.second == 0)
+						if (trans_vertex.second == UINT32_MAX)
 						{
 							get_next_step_sharing(data);
 						}
 
 						size_t trans = trans_vertex.first;
-						size_t vertex = trans_vertex.second;
+						size_t vertex = data.vertex_used[trans_vertex.second];
 						data.ants[trans].current_pos = vertex;
 						data.ants[trans].remain_volume -= weights[vertex];
 						data.ants[trans].rout.push_back(vertex);
-						data.vertex_used[vertex] = 1;
+						data.vertex_used.erase(data.vertex_used.begin() + trans_vertex.second);
 
 						size_t transport_type = data.ants[trans].transport_type;
 
@@ -271,7 +267,7 @@ namespace balancedVRP
 			Calc_data data{ 
 				vector<Ant>(),
 				vector<size_t>(transports.size()),
-				vector<size_t>(dist_mat.size(), 0)
+				vector<size_t>(dist_mat.size() - 1, 0)
 			};
 
 			for (size_t i = 0; i < transports.size(); ++i)
@@ -280,7 +276,12 @@ namespace balancedVRP
 				data.ants.push_back({ vector<size_t>(1, 0), transports[i].capacity, i, 0 , true });
 			}
 
-			data.vertex_used[0] = 1;
+			for (size_t i = 0; i < data.vertex_used.size(); ++i)
+			{
+				data.vertex_used[i] = i + 1;
+			}
+
+			//data.vertex_used[0] = 1;
 			return data;
 		}
 
@@ -318,34 +319,37 @@ namespace balancedVRP
 			{
 				const Ant& ant = data.ants[trans];
 				size_t pos = ant.current_pos;
-				for (size_t i = 1; i < data.vertex_used.size(); ++i)
-					if (data.vertex_used[i] == 0
-						&& ant.remain_volume > weights[i]) {
+				for (size_t i = 0; i < data.vertex_used.size(); ++i)
+				{
+					size_t vertex = data.vertex_used[i];
+					if (ant.remain_volume > weights[vertex]) {
 
-						if (dist_mat[pos][i] > EPS)
-							cost_move[trans][i] = pow(pheromone_mat[ant.transport_type][pos][i], alpha)
-							* pow(1 / (dist_mat[pos][i] * transports[ant.transport_type].cost_by_dist), beta);
+						
+
+						if (dist_mat[pos][vertex] > EPS)
+							cost_move[trans][i] = pow(pheromone_mat[ant.transport_type][pos][vertex], alpha)
+							* pow(1 / (dist_mat[pos][vertex] * transports[ant.transport_type].cost_by_dist), beta);
 						else
 						{
 							return { trans , i };
-
 						}
 						sum += cost_move[trans][i];
 					}
+				}
 			}
 
 			auto rand_value = (double)mersenne_rand() * sum / UINT32_MAX;
 			double sum_after = 0;
 
 			for (size_t trans = 0; trans < data.ants.size(); ++trans)
-				for (size_t i = 1; i < data.vertex_used.size(); ++i)
+				for (size_t i = 0; i < data.vertex_used.size(); ++i)
 				{
 					sum_after += cost_move[trans][i];
 					if (sum_after > rand_value)
 						return { trans , i };
 				}
 
-			return { 0 , 0 };
+			return { UINT32_MAX , UINT32_MAX };
 		}
 
 		pair<vector<size_t>, size_t> get_next_step_sharing(const Calc_data& data)
