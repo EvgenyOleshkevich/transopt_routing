@@ -12,6 +12,8 @@
 
 using std::vector;
 using std::pair;
+using std::sort;
+using std::swap;
 using matrix = vector<vector<double>>;
 using sorted_matrix = vector<vector<pair<double, size_t>>>;
 using int_matrix = vector<vector<size_t>>;

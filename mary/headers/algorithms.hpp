@@ -9,11 +9,6 @@
 #include "../headers/TSP.hpp"
 #include <memory>
 
-using std::vector;
-using std::pair;
-using std::sort;
-using std::swap;
-
 namespace algorithms
 {
     namespace clark_right

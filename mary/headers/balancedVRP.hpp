@@ -212,7 +212,8 @@ namespace balancedVRP
 				size_t max_iter = (size_t)(340 + 0.000353 * 5 * utils::sqr((double)dist_mat.size() * count_rout));
 				fill_BSTM_RECM(routs, checker);
 				max_iter = 10;
-				for (size_t i = 0; i < max_iter; ++i)
+				unsigned int start_time = clock();
+				for (size_t i = 0; i < max_iter && clock() - start_time < 60000; ++i)
 				{
 					auto index = get_max_free_BSTM(i, routs);
 					if (BSTM[index.first][index.second] == 0)
@@ -296,9 +297,11 @@ namespace balancedVRP
 			const vector<double>& weights;
 			const size_t ts;// длина списка запрета
 			const size_t count_rout;
+			const double coef_access = 1.05;
 
 			vector<vector<size_t>> BSTM;
 			vector<vector<pair<pair<size_t, size_t>, size_t>>> RECM;
+			vector<double> remain_weight;
 			vector<vector<int>> move_table; // rout*vertex
 			// вершины и способ обмена
 			// 0 - обмен, 1 - левая в правую перед указанной, 2 - правая в левую перед указанной
@@ -324,7 +327,7 @@ namespace balancedVRP
 					double base_lenght = utils::length_rout(routs[p], osman->dist_mat);
 					base_lenght += utils::length_rout(routs[q], osman->dist_mat);
 
-					double best_lenght = base_lenght * 1.2;
+					double best_lenght = base_lenght * osman->coef_access;
 
 					auto rout1 = routs[p];
 					auto rout2 = routs[q];
@@ -334,6 +337,9 @@ namespace balancedVRP
 					for (size_t i = 0; i < rout1.size(); ++i)
 						for (size_t j = 0; j < rout2.size(); ++j)
 						{
+							if (osman->remain_weight[p] + osman->weights[rout1[i]] - osman->weights[rout1[j]] < 0
+								|| osman->remain_weight[q] + osman->weights[rout1[j]] - osman->weights[rout1[i]] < 0)
+								continue;
 							swap(rout1[i], rout2[j]);
 							double lenght = utils::length_rout(rout1, osman->dist_mat);
 							lenght += utils::length_rout(rout2, osman->dist_mat);
@@ -351,6 +357,8 @@ namespace balancedVRP
 						for (size_t i = 0; i < rout1.size(); ++i)
 							for (size_t j = 0; j < rout2.size(); ++j)
 							{
+								if (osman->remain_weight[q] - osman->weights[rout1[i]] < 0)
+									continue;
 								rout2.emplace(rout2.begin() + j, rout1[i]);
 								rout1.erase(rout1.begin() + i);
 								double lenght = utils::length_rout(rout1, osman->dist_mat);
@@ -367,6 +375,8 @@ namespace balancedVRP
 						// вставка в конец
 						for (size_t i = 0; i < rout1.size(); ++i)
 						{
+							if (osman->remain_weight[q] - osman->weights[rout1[i]] < 0)
+								continue;
 							rout2.push_back(rout1[i]);
 							rout1.erase(rout1.begin() + i);
 							double lenght = utils::length_rout(rout1, osman->dist_mat);
@@ -387,6 +397,8 @@ namespace balancedVRP
 						for (size_t i = 0; i < rout2.size(); ++i)
 							for (size_t j = 0; j < rout1.size(); ++j)
 							{
+								if (osman->remain_weight[p] - osman->weights[rout1[i]] < 0)
+									continue;
 								rout1.emplace(rout1.begin() + j, rout2[i]);
 								rout2.erase(rout2.begin() + i);
 								double lenght = utils::length_rout(rout1, osman->dist_mat);
@@ -403,6 +415,8 @@ namespace balancedVRP
 						// вставка в конец
 						for (size_t i = 0; i < rout2.size(); ++i)
 						{
+							if (osman->remain_weight[p] - osman->weights[rout1[i]] < 0)
+								continue;
 							rout1.push_back(rout2[i]);
 							rout2.erase(rout2.begin() + i);
 							double lenght = utils::length_rout(rout1, osman->dist_mat);
