@@ -292,31 +292,30 @@ namespace balancedVRP
 		}
 
 
-		vector<size_t> radian_sort(const vector<double>& x, const vector<double>& y, size_t size)
+		vector<size_t> radian_sort(const vector<double>& x, const vector<double>& y)
 		{
-			--size;
-			matrix points(size, vector<double>(4));
+			if (x.size() != y.size())
+				throw std::runtime_error("size dont match");
+
+			size_t size = x.size();
+			vector<pair<double, size_t>> points(size);
 			for (size_t i = 0; i < size; ++i)
 			{
-				if (abs(x[i + 1]) < 0.000001 && abs(y[i + 1]) < 0.000001)
+				if (abs(x[i]) < 0.000001 && abs(y[i]) < 0.000001)
 				{
-					points[i][0] = -5;
-					points[i][1] = x[i + 1];
-					points[i][2] = y[i + 1];
-					points[i][3] = i + 1;
+					points[i].first = -5;
+					points[i].second = i;
 					continue;
 				}
-				points[i][0] = std::atan2(x[i + 1], y[i + 1]);
-				points[i][1] = x[i + 1];
-				points[i][2] = y[i + 1];
-				points[i][3] = i + 1;
+				points[i].first = std::atan2(x[i + 1], y[i + 1]);
+				points[i].second = i;
 			}
 
 			std::sort(points.begin(), points.end());
 
 			auto res = vector<size_t>(size);
 			for (size_t i = 0; i < size; ++i)
-				res[i] = points[i][3];
+				res[i] = points[i].second;
 			return res;
 		}
 		
@@ -436,6 +435,36 @@ namespace balancedVRP
 						res[(i + 4) % clusters.size()].push_back(clusters[i][j]);
 					}
 
+			return res;
+		}
+
+		vector<size_t> radian_sort(const vector<double>& x, const vector<double>& y)
+		{
+			if (x.size() != y.size())
+				throw std::runtime_error("size dont match");
+
+			size_t size = x.size() - 1;
+			vector<pair<double, size_t>> points(size);
+
+			double cx = x[0];
+			double cy = y[0];
+			for (size_t i = 0; i < size; ++i)
+			{
+				if (abs(x[i + 1] - cx) < 0.000001 && abs(y[i + 1] - cy) < 0.000001)
+				{
+					points[i].first = -5;
+					points[i].second = i + 1;
+					continue;
+				}
+				points[i].first = std::atan2(x[i + 1] - cx, y[i + 1] - cy);
+				points[i].second = i + 1;
+			}
+
+			std::sort(points.begin(), points.end());
+
+			auto res = vector<size_t>(size);
+			for (size_t i = 0; i < size; ++i)
+				res[i] = points[i].second;
 			return res;
 		}
 	}

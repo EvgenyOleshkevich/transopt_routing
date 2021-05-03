@@ -30,7 +30,7 @@ namespace balancedVRP
 		int_matrix dichotomous_division_weight(const matrix&, const vector<double>&,
 			const vector<size_t>&, const double, const size_t, const bool);
 
-		vector<size_t> radian_sort(const vector<double>&, const vector<double>&, const size_t);
+		vector<size_t> radian_sort(const vector<double>&, const vector<double>&);
 		
 		int_matrix sweeping(const double* const, const double* const, const size_t, size_t);
 
@@ -47,6 +47,55 @@ namespace balancedVRP
 	namespace project
 	{
 		int_matrix clusters_with_multiple_duplicates(const int_matrix&, const vector<size_t>&);
+
+		vector<size_t> radian_sort(const vector<double>&, const vector<double>&);
+
+		class Sweeping
+		{
+		public:
+			Sweeping(const vector<double>& x, const vector<double>& y, const vector<double>& weights, const vector<Transport>& transports)
+				: transports(transports), x(x), y(y), weights(weights) {}
+
+			void run()
+			{
+				vector<size_t> order = radian_sort(x, y);
+				size_t order_i = 0;
+
+				for (const Transport& transport : transports)
+				{
+					int_matrix routs;
+
+					for (size_t i = 0; i < transport.count; ++i)
+					{
+						vector<size_t> rout(1, 0);
+						double remain_weight = transport.capacity;
+						while (remain_weight > weights[order[order_i]])
+						{
+							remain_weight -= weights[order[order_i]];
+							rout.push_back(order[order_i]);
+							++order_i;
+							if (order_i == order.size())
+								break;
+						} 
+						rout.push_back(0);
+						routs.push_back(rout);
+						if (order_i == order.size())
+							break;
+					}
+					res.push_back(routs);
+					if (order_i == order.size())
+						break;
+				}
+			}
+
+			vector<int_matrix> res;
+		private:
+			const vector<Transport>& transports;
+			const vector<double>& x;
+			const vector<double>& y;
+			const vector<double>& weights;
+
+		};
 	}
 
 	// разрезание общего маршрута
