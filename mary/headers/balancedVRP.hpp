@@ -10,6 +10,14 @@
 
 namespace balancedVRP
 {
+	struct Transport
+	{
+		double capacity;
+		double cost_start;
+		double cost_by_dist;
+		size_t count;
+	};
+
 	namespace clustering
 	{
 		pair<int, int> two_farthest_vertex(const matrix&, const vector<size_t>&);
@@ -53,8 +61,9 @@ namespace balancedVRP
 		class Sweeping
 		{
 		public:
-			Sweeping(const vector<double>& x, const vector<double>& y, const vector<double>& weights, const vector<Transport>& transports)
-				: transports(transports), x(x), y(y), weights(weights) {}
+			Sweeping(const matrix& dist_mat, const vector<double>& x, const vector<double>& y,
+				const vector<double>& weights, const vector<Transport>& transports)
+				: dist_mat(dist_mat), transports(transports), x(x), y(y), weights(weights) {}
 
 			void run()
 			{
@@ -89,10 +98,94 @@ namespace balancedVRP
 			}
 
 			vector<int_matrix> res;
+			double lenght()
+			{
+					double lenght = 0;
+					for (size_t trans_type = 0; trans_type < res.size(); ++trans_type)
+						for (const vector<size_t>& rout : res[trans_type])
+							lenght += utils::length_rout_0(rout, dist_mat) * transports[trans_type].cost_by_dist + transports[trans_type].cost_start;
+					return lenght;
+			}
 		private:
+			const matrix& dist_mat;
 			const vector<Transport>& transports;
 			const vector<double>& x;
 			const vector<double>& y;
+			const vector<double>& weights;
+
+		};
+
+		class GreadyBase
+		{
+		public:
+			GreadyBase(const matrix& dist_mat, const sorted_matrix& sorted_dist_mat,
+				const vector<double>& weights, const vector<Transport>& transports)
+				: sorted_dist_mat(sorted_dist_mat), dist_mat(dist_mat),
+				transports(transports), weights(weights) {}
+
+			void run()
+			{
+				vector <size_t> order_i(dist_mat.size(), 0);
+				vector <size_t> used(dist_mat.size(), 0);
+				used[0] = 1;
+				size_t count_add = 1;
+
+				for (const Transport& transport : transports)
+				{
+					int_matrix routs;
+
+					for (size_t i = 0; i < transport.count; ++i)
+					{
+						vector<size_t> rout(1, 0);
+						double remain_weight = transport.capacity;
+						size_t vertex = 0;
+						while (used[vertex] == 1)
+						{
+							vertex = sorted_dist_mat[0][order_i[0]].second;
+							++order_i[0];
+						}
+
+						while (remain_weight > weights[vertex])
+						{
+							used[vertex] = 1;
+							remain_weight -= weights[vertex];
+							rout.push_back(vertex);
+							++count_add;
+							if (count_add == used.size())
+								break;
+
+							size_t new_vertex = vertex;
+							while (used[new_vertex] == 1)
+							{
+								new_vertex = sorted_dist_mat[vertex][order_i[vertex]].second;
+								++order_i[vertex];
+							}
+							vertex = new_vertex;
+						}
+						rout.push_back(0);
+						routs.push_back(rout);
+						if (count_add == used.size())
+							break;
+					}
+					res.push_back(routs);
+					if (count_add == used.size())
+						break;
+				}
+			}
+
+			vector<int_matrix> res;
+			double lenght()
+			{
+				double lenght = 0;
+				for (size_t trans_type = 0; trans_type < res.size(); ++trans_type)
+					for (const vector<size_t>& rout : res[trans_type])
+						lenght += utils::length_rout_0(rout, dist_mat) * transports[trans_type].cost_by_dist + transports[trans_type].cost_start;
+				return lenght;
+			}
+		private:
+			const sorted_matrix& sorted_dist_mat;
+			const matrix& dist_mat;
+			const vector<Transport>& transports;
 			const vector<double>& weights;
 
 		};
@@ -133,14 +226,6 @@ namespace balancedVRP
 
 		// can be faster without utils::length_rout(rout, dist_mat);
 		double greedy_decode_fast(const vec_int_float&);
-	};
-
-	struct Transport
-	{
-		double capacity;
-		double cost_start;
-		double cost_by_dist;
-		size_t count;
 	};
 
 	class Ant_algorithm

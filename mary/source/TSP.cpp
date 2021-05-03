@@ -17,7 +17,7 @@ namespace TSP
             auto dist_mat = p.first;
             auto sorted_edges = p.second;
 
-            auto rout = balancedVRP::clustering::radian_sort(x, y, size);
+            auto rout = balancedVRP::clustering::radian_sort(x, y);
 
             Lin_Kernighan_by_rout(rout, dist_mat, sorted_edges);
             return rout;

@@ -159,6 +159,18 @@ void Test(vector<double>& vec) {
     vec.clear();
 }
 
+void print(const vector<int_matrix>& routs)
+{
+    for (const int_matrix& rout_mat : routs)
+        for (const vector<size_t>& rout : rout_mat)
+        {
+            cout << "[";
+            for (const size_t vertex : rout)
+                cout << vertex << ", ";
+            cout << 0 << "]," << endl;
+        }
+}
+
 bool check_matrix(const vector<int_matrix>& routs, const size_t size)
 {
     vector<size_t> used(size, 0);
@@ -200,9 +212,34 @@ void Ant_test()
     cout << "check: " << check_matrix(mat_len.first, dist_mat.size()) << endl;
 }
 
+void sweep_test()
+{
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix_with_end_point(x, y);
+
+    balancedVRP::project::Sweeping sweep(dist_mat, x, y, weights, transports);
+    sweep.run();
+    cout << "lenght: " << sweep.lenght() << endl;
+    print(sweep.res);
+}
+
+void greedy_test()
+{
+    read_file();
+    read_transports();
+    auto P = utils::fill_matrix_and_sort(x, y);
+    dist_mat = P.first;
+
+    balancedVRP::project::GreadyBase greedy(dist_mat, P.second, weights, transports);
+    greedy.run();
+    cout << "lenght: " << greedy.lenght() << endl;
+    print(greedy.res);
+}
+
 int main()
 {
-    Ant_test();
+    greedy_test();
     return 0;
     read_file();
     read_transports();
