@@ -189,6 +189,392 @@ namespace balancedVRP
 			const vector<double>& weights;
 
 		};
+
+		class Osman
+		{
+		public:
+			Osman(const matrix& dist_mat, const vector<double>& weights,
+				const vector<Transport>& ransports, int_matrix routs,
+				const vector<size_t>& transport_id, const size_t count_rout) :
+				res(routs), transport_id(transport_id),
+				dist_mat(dist_mat), transports(transports), weights(weights),
+				ts((size_t)(std::max(7.0, 9.6 * log(dist_mat.size() * count_rout) - 40))),
+				count_rout(count_rout)// 13
+			{}
+
+			void run()
+			{
+				std::unique_ptr<checker_change> checker(new checker_change_widht_local(this));
+				auto routs = res;
+				auto best_lenght = lenght();
+				move_table = get_move_table();
+
+				size_t max_iter = (size_t)(340 + 0.000353 * 5 * utils::sqr((double)dist_mat.size() * count_rout));
+				fill_BSTM_RECM(routs, checker);
+				max_iter = 10;
+				for (size_t i = 0; i < max_iter; ++i)
+				{
+					auto index = get_max_free_BSTM(i, routs);
+					if (BSTM[index.first][index.second] == 0)
+						break;
+					size_t p = index.first;
+					size_t q = index.second;
+					auto a = RECM[p][q].first.first;
+					auto b = RECM[p][q].first.second;
+					auto way = RECM[p][q].second;
+					switch (way)
+					{
+					case 0:
+					{
+						move_table[p][routs[p][a]] = i;
+						move_table[q][routs[q][b]] = i;
+						swap(routs[p][a], routs[q][b]);
+						break;
+					}
+					case 1:
+					{
+						move_table[p][routs[p][a]] = i;
+						routs[q].emplace(routs[q].begin() + b, routs[p][a]);
+						routs[p].erase(routs[p].begin() + a);
+						break;
+					}
+					case 2:
+					{
+						move_table[q][routs[q][b]] = i;
+						routs[p].emplace(routs[p].begin() + a, routs[q][b]);
+						routs[q].erase(routs[q].begin() + b);
+						break;
+					}
+					case 3:
+					{
+						move_table[p][routs[p][a]] = i;
+						routs[q].push_back(routs[p][a]);
+						routs[p].erase(routs[p].begin() + a);
+						break;
+					}
+					case 4:
+					{
+						move_table[q][routs[q][b]] = i;
+						routs[p].push_back(routs[q][b]);
+						routs[q].erase(routs[q].begin() + b);
+						break;
+					}
+					default:
+						break;
+					}
+					auto len = lenght(routs);
+					if (best_lenght > len)
+					{
+						best_lenght = len;
+						res = routs;
+					}
+					recalculate_BSTM_RECM(routs, p, q, checker);
+				}
+			}
+
+			double lenght()
+			{
+				double lenght = 0;
+				for (size_t i = 0; i < res.size(); ++i)
+					lenght += utils::length_rout_0(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
+				return lenght;
+			}
+
+			double lenght(const int_matrix& routs)
+			{
+				double lenght = 0;
+				for (size_t i = 0; i < routs.size(); ++i)
+					lenght += utils::length_rout_0(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
+				return lenght;
+			}
+
+			int_matrix res;
+			const vector<size_t>& transport_id;
+		private:
+			const matrix& dist_mat;
+			const vector<Transport>& transports;
+			const vector<double>& weights;
+			const size_t ts;// длина списка запрета
+			const size_t count_rout;
+
+			vector<vector<size_t>> BSTM;
+			vector<vector<pair<pair<size_t, size_t>, size_t>>> RECM;
+			vector<vector<int>> move_table; // rout*vertex
+			// вершины и способ обмена
+			// 0 - обмен, 1 - левая в правую перед указанной, 2 - правая в левую перед указанной
+			// 3 - левая в правую в конец, 4 - правая в левую в конец, 5 - ничего
+
+			class checker_change
+			{
+			public:
+				checker_change(Osman* osman) : osman(osman) {}
+				void virtual check_change(const vector<vector<size_t>>& routs, size_t p, size_t q) const = 0;
+				Osman* const osman;
+			};
+
+			class checker_change_widht_local : public checker_change
+			{
+			public:
+				checker_change_widht_local(Osman* osman) : checker_change(osman) {}
+
+				void check_change(const vector<vector<size_t>>& routs, size_t p, size_t q) const override
+				{
+					if (p > q)
+						swap(p, q);
+					double base_lenght = utils::length_rout(routs[p], osman->dist_mat);
+					base_lenght += utils::length_rout(routs[q], osman->dist_mat);
+
+					double best_lenght = base_lenght * 1.2;
+
+					auto rout1 = routs[p];
+					auto rout2 = routs[q];
+					pair<pair<size_t, size_t>, size_t> decision = { {0,0}, 5 };
+
+					// обмен
+					for (size_t i = 0; i < rout1.size(); ++i)
+						for (size_t j = 0; j < rout2.size(); ++j)
+						{
+							swap(rout1[i], rout2[j]);
+							double lenght = utils::length_rout(rout1, osman->dist_mat);
+							lenght += utils::length_rout(rout2, osman->dist_mat);
+							if (best_lenght > lenght)
+							{
+								best_lenght = lenght;
+								decision = { {i,j}, 0 };
+							}
+							swap(rout1[i], rout2[j]);
+						}
+
+					// 1 идет в 2
+					if (rout1.size() > 1)
+					{
+						for (size_t i = 0; i < rout1.size(); ++i)
+							for (size_t j = 0; j < rout2.size(); ++j)
+							{
+								rout2.emplace(rout2.begin() + j, rout1[i]);
+								rout1.erase(rout1.begin() + i);
+								double lenght = utils::length_rout(rout1, osman->dist_mat);
+								lenght += utils::length_rout(rout2, osman->dist_mat);
+								if (best_lenght > lenght)
+								{
+									best_lenght = lenght;
+									decision = { {i,j}, 1 };
+								}
+								rout1.emplace(rout1.begin() + i, rout2[j]);
+								rout2.erase(rout2.begin() + j);
+							}
+
+						// вставка в конец
+						for (size_t i = 0; i < rout1.size(); ++i)
+						{
+							rout2.push_back(rout1[i]);
+							rout1.erase(rout1.begin() + i);
+							double lenght = utils::length_rout(rout1, osman->dist_mat);
+							lenght += utils::length_rout(rout2, osman->dist_mat);
+							if (best_lenght > lenght)
+							{
+								best_lenght = lenght;
+								decision = { {i,0}, 3 };
+							}
+							rout1.emplace(rout1.begin() + i, rout2.back());
+							rout2.pop_back();
+						}
+					}
+
+					// 2 идет в 1
+					if (rout2.size() > 1)
+					{
+						for (size_t i = 0; i < rout2.size(); ++i)
+							for (size_t j = 0; j < rout1.size(); ++j)
+							{
+								rout1.emplace(rout1.begin() + j, rout2[i]);
+								rout2.erase(rout2.begin() + i);
+								double lenght = utils::length_rout(rout1, osman->dist_mat);
+								lenght += utils::length_rout(rout2, osman->dist_mat);
+								if (best_lenght > lenght)
+								{
+									best_lenght = lenght;
+									decision = { {j,i}, 2 };
+								}
+								rout2.emplace(rout2.begin() + i, rout1[j]);
+								rout1.erase(rout1.begin() + j);
+							}
+
+						// вставка в конец
+						for (size_t i = 0; i < rout2.size(); ++i)
+						{
+							rout1.push_back(rout2[i]);
+							rout2.erase(rout2.begin() + i);
+							double lenght = utils::length_rout(rout1, osman->dist_mat);
+							lenght += utils::length_rout(rout2, osman->dist_mat);
+							if (best_lenght > lenght)
+							{
+								best_lenght = lenght;
+								decision = { {0,i}, 4 };
+							}
+							rout2.emplace(rout2.begin() + i, rout1.back());
+							rout1.pop_back();
+						}
+					}
+
+					osman->BSTM[p][q] = (size_t)(best_lenght - base_lenght);
+					osman->BSTM[q][p] = 0;
+					osman->RECM[p][q] = decision;
+					osman->RECM[q][p] = { {0, 0}, 6 };
+				}
+			};
+
+			vector<vector<int>> get_move_table()
+			{
+				return vector<vector<int>>(count_rout, vector<int>(dist_mat.size(), -1000000000));
+			}
+
+			void check_change(const vector<vector<size_t>>& routs, size_t p, size_t q)
+			{
+				if (p > q)
+					swap(p, q);
+				double base_lenght = utils::length_rout(routs[p], dist_mat);
+				base_lenght += utils::length_rout(routs[q], dist_mat);
+
+				double best_lenght = base_lenght * 1.2;
+
+				auto rout1 = routs[p];
+				auto rout2 = routs[q];
+				pair<pair<size_t, size_t>, size_t> decision = { {0,0}, 5 };
+
+				// обмен
+				for (size_t i = 0; i < rout1.size(); ++i)
+					for (size_t j = 0; j < rout2.size(); ++j)
+					{
+						swap(rout1[i], rout2[j]);
+						double lenght = utils::length_rout(rout1, dist_mat);
+						lenght += utils::length_rout(rout2, dist_mat);
+						if (best_lenght > lenght)
+						{
+							best_lenght = lenght;
+							decision = { {i,j}, 0 };
+						}
+						swap(rout1[i], rout2[j]);
+					}
+
+				// 1 идет в 2
+				if (rout1.size() > 1)
+				{
+					for (size_t i = 0; i < rout1.size(); ++i)
+						for (size_t j = 0; j < rout2.size(); ++j)
+						{
+							rout2.emplace(rout2.begin() + j, rout1[i]);
+							rout1.erase(rout1.begin() + i);
+							double lenght = utils::length_rout(rout1, dist_mat);
+							lenght += utils::length_rout(rout2, dist_mat);
+							if (best_lenght > lenght)
+							{
+								best_lenght = lenght;
+								decision = { {i,j}, 1 };
+							}
+							rout1.emplace(rout1.begin() + i, rout2[j]);
+							rout2.erase(rout2.begin() + j);
+						}
+
+					// вставка в конец
+					for (size_t i = 0; i < rout1.size(); ++i)
+					{
+						rout2.push_back(rout1[i]);
+						rout1.erase(rout1.begin() + i);
+						double lenght = utils::length_rout(rout1, dist_mat);
+						lenght += utils::length_rout(rout2, dist_mat);
+						if (best_lenght > lenght)
+						{
+							best_lenght = lenght;
+							decision = { {i,0}, 3 };
+						}
+						rout1.emplace(rout1.begin() + i, rout2.back());
+						rout2.pop_back();
+					}
+				}
+
+				// 2 идет в 1
+				if (rout2.size() > 1)
+				{
+					for (size_t i = 0; i < rout2.size(); ++i)
+						for (size_t j = 0; j < rout1.size(); ++j)
+						{
+							rout1.emplace(rout1.begin() + j, rout2[i]);
+							rout2.erase(rout2.begin() + i);
+							double lenght = utils::length_rout(rout1, dist_mat);
+							lenght += utils::length_rout(rout2, dist_mat);
+							if (best_lenght > lenght)
+							{
+								best_lenght = lenght;
+								decision = { {j,i}, 2 };
+							}
+							rout2.emplace(rout2.begin() + i, rout1[j]);
+							rout1.erase(rout1.begin() + j);
+						}
+
+					// вставка в конец
+					for (size_t i = 0; i < rout2.size(); ++i)
+					{
+						rout1.push_back(rout2[i]);
+						rout2.erase(rout2.begin() + i);
+						double lenght = utils::length_rout(rout1, dist_mat);
+						lenght += utils::length_rout(rout2, dist_mat);
+						if (best_lenght > lenght)
+						{
+							best_lenght = lenght;
+							decision = { {0,i}, 4 };
+						}
+						rout2.emplace(rout2.begin() + i, rout1.back());
+						rout1.pop_back();
+					}
+				}
+
+				BSTM[p][q] = (size_t)(best_lenght - base_lenght);
+				BSTM[q][p] = 0;
+				RECM[p][q] = decision;
+				RECM[q][p] = { {0, 0}, 6 };
+			}
+
+			void fill_BSTM_RECM(const vector<vector<size_t>>& routs, const std::unique_ptr<checker_change>& checker)
+			{
+				BSTM = vector<vector<size_t>>(count_rout, vector < size_t>(count_rout, 0));
+				RECM = vector<vector<pair<pair<size_t, size_t>, size_t>>>(count_rout,
+					vector<pair<pair<size_t, size_t>, size_t>>(count_rout, { {0,0}, 6 }));
+				for (size_t p = 0; p < count_rout; ++p)
+					for (size_t q = p + 1; q < count_rout; ++q)
+						checker->check_change(routs, p, q);
+			}
+
+			void recalculate_BSTM_RECM(const vector<vector<size_t>>& routs, size_t p, size_t q, const std::unique_ptr<checker_change>& checker)
+			{
+				for (size_t i = 0; i < count_rout; ++i)
+					if (i != p)
+						checker->check_change(routs, p, i);
+
+				for (size_t i = 0; i < count_rout; ++i)
+					if (i != p && i != q)
+						checker->check_change(routs, i, q);
+			}
+
+			pair<size_t, size_t> get_max_free_BSTM(size_t iter, const vector<vector<size_t>>& routs)
+			{
+				auto res = pair<size_t, size_t>(0, 0);
+				double max = 0;
+				for (size_t p = 0; p < count_rout; ++p)
+					for (size_t q = p + 1; q < count_rout; ++q)
+						if (max < BSTM[p][q])
+						{
+							auto iter_num1 = iter - move_table[q][routs[p][RECM[p][q].first.first]];
+							auto iter_num2 = iter - move_table[p][routs[q][RECM[p][q].first.second]];
+							if (iter_num1 > ts && iter_num2 > ts)
+							{
+								max = BSTM[p][q];
+								res = { p, q };
+							}
+						}
+				return res;
+			}
+		};
 	}
 
 	// разрезание общего маршрута

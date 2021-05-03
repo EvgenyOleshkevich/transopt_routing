@@ -112,7 +112,7 @@ namespace algorithms
             ts((size_t)(std::max(7.0, 9.6 * log(count_point * need_routs) - 40)))// 13
         {}
 
-        int_matrix start(int_matrix routs,
+        int_matrix run(int_matrix routs,
             const size_t checker_type)
         {
             auto checker = get_checker(checker_type);
@@ -516,6 +516,8 @@ namespace algorithms
             return res;
         }
     };
+
+
 
     class Genetic
     {
