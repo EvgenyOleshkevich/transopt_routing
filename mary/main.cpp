@@ -30,6 +30,12 @@ void read_transports()
         transports.push_back({ volume, cost_start, cost_by_dist, count });
     }
     in.close();
+
+    sort(transports.begin(), transports.end(), [](const Transport& a, const Transport& b)
+        {
+            return a.capacity < b.capacity;
+            //return a.second.sep.size() < b.second.sep.size();
+        });
 }
 
 void read_file()
@@ -205,7 +211,7 @@ void Ant_test()
     dist_mat = utils::fill_matrix_with_end_point(x, y);
 
     balancedVRP::Ant_algorithm ant(dist_mat, transports, weights);
-    auto mat_len = ant.calculate();
+    auto mat_len = ant.run();
     cout << "lenght: " << mat_len.second << endl;
     cout << "check: " << check_matrix(mat_len.first, dist_mat.size()) << endl;
 }
@@ -250,16 +256,31 @@ void greedy_2opt_test()
         for (vector<size_t>& rout : rout_mat)
         {
             TSP::local_opt::opt_2_fast2(rout, dist_mat);
-            TSP::local_opt::opt_3(rout, dist_mat);
+            //TSP::local_opt::opt_3(rout, dist_mat);
         }
     cout << "lenght: " << greedy.lenght() << endl;
     print(greedy.res);
     cout << "check: " << check_matrix(greedy.res, dist_mat.size()) << endl;
 }
 
+void clurk_test()
+{
+    read_file();
+    read_transports();
+    auto P = utils::fill_matrix_and_sort(x, y);
+    dist_mat = P.first;
+
+    balancedVRP::project::ClarkRight clurk(dist_mat, weights, transports);
+    clurk.run();
+
+    cout << "lenght: " << clurk.lenght() << endl;
+    print(clurk.res);
+    cout << "check: " << check_matrix(clurk.res, dist_mat.size()) << endl;
+}
+
 int main()
 {
-    sweep_test();
+    clurk_test();
     return 0;
     read_file();
     read_transports();

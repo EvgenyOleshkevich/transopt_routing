@@ -244,6 +244,204 @@ namespace balancedVRP
 			}
 		};
 
+		class ClarkRight
+		{
+		public:
+			ClarkRight(const matrix& dist_mat, 
+				const vector<double>& weights, const vector<Transport>& transports)
+				: dist_mat(dist_mat),
+				transports(transports), weights(weights) {}
+
+			void run()
+			{
+				{
+					auto sotred_save_matrix = sort_save_matrix();
+					auto routs_start = init_routs();
+					auto routs_end = init_routs();
+					size_t count_routs = dist_mat.size() - 1;
+					while (count_routs > 1)
+					{
+						auto save_rout = sotred_save_matrix.back();
+						sotred_save_matrix.pop_back();
+						size_t i = (size_t)save_rout[1];
+						size_t j = (size_t)save_rout[2];
+						if (routs_start[j].empty() || routs_end[i].empty() || routs_end[i][0] == j)
+							continue; // проверка, что они из разных маршрутов
+
+
+						size_t m = routs_end[i][0];
+						size_t n = routs_start[j].back();
+						vector<size_t> vec;
+
+						for (auto vertex : routs_end[i])
+							vec.push_back(vertex);
+						for (auto vertex : routs_start[j])
+						{
+							routs_start[m].push_back(vertex);
+							vec.push_back(vertex);
+						}
+						routs_end[n] = vec;
+						routs_end[i].clear();
+						routs_start[j].clear();
+						--count_routs;
+					}
+
+
+					vector<size_t> res_rout;
+					for (const vector<size_t>& rout : routs_start)
+					{
+						if (rout.empty())
+							continue;
+						cut_rout(rout);
+						break;
+					}
+				}
+			}
+
+
+
+			vector<int_matrix> res;
+			double lenght()
+			{
+				double lenght = 0;
+				for (size_t trans_type = 0; trans_type < res.size(); ++trans_type)
+					for (const vector<size_t>& rout : res[trans_type])
+						lenght += utils::length_rout_0(rout, dist_mat) * transports[trans_type].cost_by_dist + transports[trans_type].cost_start;
+				return lenght;
+			}
+		private:
+			const matrix& dist_mat;
+			const vector<Transport>& transports;
+			const vector<double>& weights;
+
+
+			void cut_rout(const vector<size_t>& rout)
+			{
+				double cut_coef = get_cut_coef(rout);
+				size_t rout_i = 0;
+				for (size_t i = 0; i < transports.size(); ++i)
+				{
+					int_matrix routs;
+					for (size_t j = 0; j < transports[i].count; ++j)
+					{
+						double remain_weight = transports[i].capacity;
+						vector<size_t> rout_trans(1, 0);
+						while (remain_weight - weights[rout[rout_i]] >= 0)
+						{
+							rout_trans.push_back(rout[rout_i]);
+							++rout_i;
+							if (rout_i >= rout.size())
+								break;
+							if (dist_mat[rout[rout_i - 1]][rout[rout_i]] > cut_coef)
+								break;
+
+						}
+						rout_trans.push_back(0);
+						routs.push_back(rout_trans);
+						if (rout_i >= rout.size())
+							break;
+					}
+					
+					res.push_back(routs);
+					if (rout_i >= rout.size())
+						break;
+				}
+			}
+
+			double get_cut_coef(const vector<size_t>& rout)
+			{
+				const double speed_search = 1.1;
+
+				double mean_edge = 0;
+				size_t count_edge = 0;
+				for (size_t i = 1; i < dist_mat.size(); ++i)
+					for (size_t j = i + 1; j < dist_mat.size(); ++j)
+					{
+						++count_edge;
+						mean_edge += dist_mat[i][j];
+					}
+				mean_edge /= count_edge;
+
+				double cut_coef = 4;
+				
+				bool is_ok = false;
+				while (!is_ok)
+				{
+					size_t rout_i = 0;
+					for (size_t i = 0; i < transports.size(); ++i)
+					{
+						for (size_t j = 0; j < transports[i].count; ++j)
+						{
+							double remain_weight = transports[i].capacity;
+							while (remain_weight - weights[rout[rout_i]] >= 0)
+							{
+								++rout_i;
+								if (rout_i >= rout.size())
+									break;
+								if (dist_mat[rout[rout_i - 1]][rout[rout_i]] > cut_coef)
+									break;
+							}
+							if (rout_i >= rout.size())
+								break;
+						}
+						if (rout_i >= rout.size())
+							break;
+					}
+					size_t c = 0;
+					for (size_t i = 1; i < rout.size(); ++i)
+						if (dist_mat[rout[i - 1]][rout[i]]) {
+							++c;
+						}
+					if (rout_i < rout.size())
+						cut_coef *= speed_search;
+					else
+						break;
+				}
+
+				return cut_coef;
+			}
+
+			matrix get_save_matrix()
+			{
+				matrix save_matrix(dist_mat.size(), vector<double>(dist_mat.size()));
+				for (size_t i = 0; i < dist_mat.size(); ++i)
+					for (size_t j = 0; j < dist_mat.size(); ++j)
+						save_matrix[i][j] = dist_mat[i][0] + dist_mat[0][j] - dist_mat[i][j];
+				return save_matrix;
+			}
+
+			matrix sort_save_matrix()
+			{
+				matrix save_matrix = get_save_matrix();
+				matrix sorted_save_matrix;
+				for (size_t i = 1; i < dist_mat.size(); ++i)
+					for (size_t j = 1; j < dist_mat.size(); ++j)
+					{
+						if (i == j)
+							continue;
+						auto save = vector<double>(3);
+						save[0] = save_matrix[i][j];
+						save[1] = i;
+						save[2] = j;
+						sorted_save_matrix.push_back(save);
+					}
+				sort(sorted_save_matrix.begin(), sorted_save_matrix.end());
+				//for (size_t i = 1; i < sorted_save_matrix.size() / 2; ++i)
+				//	swap(sorted_save_matrix[i], sorted_save_matrix[sorted_save_matrix.size() - i]);
+				//for (auto save :sorted_save_matrix)
+				//    cout << save[0] << "; i=" << save[1] << "; j=" << save[2] << endl;
+				return sorted_save_matrix;
+			}
+
+			int_matrix init_routs()
+			{
+				int_matrix routs(dist_mat.size());
+				for (size_t i = 1; i < dist_mat.size(); ++i)
+					routs[i].push_back(i);
+				return routs;
+			}
+		};
+
 		class Osman
 		{
 		public:
@@ -706,7 +904,7 @@ namespace balancedVRP
 			vector<size_t> vertex_used;
 		};
 
-		pair<vector<int_matrix>, double> calculate()
+		pair<vector<int_matrix>, double> run()
 		{
 			double best_lenght = UINT32_MAX;
 			vector<int_matrix> best_res;

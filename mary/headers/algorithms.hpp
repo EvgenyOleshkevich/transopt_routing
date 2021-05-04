@@ -512,8 +512,6 @@ namespace algorithms
         }
     };
 
-
-
     class Genetic
     {
     public:
