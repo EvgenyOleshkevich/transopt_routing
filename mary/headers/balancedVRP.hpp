@@ -125,6 +125,76 @@ namespace balancedVRP
 
 			void run()
 			{
+				vector <size_t> used(dist_mat.size(), 0);
+				used[0] = 1;
+				size_t count_add = 1;
+
+				for (const Transport& transport : transports)
+				{
+					int_matrix routs;
+
+					for (size_t i = 0; i < transport.count; ++i)
+					{
+						vector<size_t> rout(1, 0);
+						double remain_weight = transport.capacity;
+						size_t vertex = 0;
+						for (size_t order_i = 0; order_i < sorted_dist_mat.size() && used[vertex] == 1; ++order_i)
+							vertex = sorted_dist_mat[0][order_i].second;
+
+						while (true/*remain_weight >= weights[vertex]*/)
+						{
+							used[vertex] = 1;
+							remain_weight -= weights[vertex];
+							rout.push_back(vertex);
+							++count_add;
+							if (count_add == used.size())
+								break;
+
+							size_t new_vertex = vertex;
+							size_t order_i = 0;
+							for (;
+								order_i < sorted_dist_mat.size()
+								&& (used[new_vertex] == 1
+								|| remain_weight < weights[new_vertex]);
+								++order_i)
+							{
+								new_vertex = sorted_dist_mat[vertex][order_i].second;
+							}
+							if (used[new_vertex] == 1 || remain_weight < weights[new_vertex])
+								break;
+							vertex = new_vertex;
+						}
+						std::cout << "remain_weight: " << remain_weight << std::endl;
+						rout.push_back(0);
+						routs.push_back(rout);
+						if (count_add == used.size())
+							break;
+					}
+					res.push_back(routs);
+					if (count_add == used.size())
+						break;
+				}
+			}
+
+			
+
+			vector<int_matrix> res;
+			double lenght()
+			{
+				double lenght = 0;
+				for (size_t trans_type = 0; trans_type < res.size(); ++trans_type)
+					for (const vector<size_t>& rout : res[trans_type])
+						lenght += utils::length_rout_0(rout, dist_mat) * transports[trans_type].cost_by_dist + transports[trans_type].cost_start;
+				return lenght;
+			}
+		private:
+			const sorted_matrix& sorted_dist_mat;
+			const matrix& dist_mat;
+			const vector<Transport>& transports;
+			const vector<double>& weights;
+
+			void run2()
+			{
 				vector <size_t> order_i(dist_mat.size(), 0);
 				vector <size_t> used(dist_mat.size(), 0);
 				used[0] = 1;
@@ -172,22 +242,6 @@ namespace balancedVRP
 						break;
 				}
 			}
-
-			vector<int_matrix> res;
-			double lenght()
-			{
-				double lenght = 0;
-				for (size_t trans_type = 0; trans_type < res.size(); ++trans_type)
-					for (const vector<size_t>& rout : res[trans_type])
-						lenght += utils::length_rout_0(rout, dist_mat) * transports[trans_type].cost_by_dist + transports[trans_type].cost_start;
-				return lenght;
-			}
-		private:
-			const sorted_matrix& sorted_dist_mat;
-			const matrix& dist_mat;
-			const vector<Transport>& transports;
-			const vector<double>& weights;
-
 		};
 
 		class Osman

@@ -19,7 +19,7 @@ vector<Transport> transports;
 
 void read_transports()
 {
-    std::ifstream in("data_transport_test.csv");
+    std::ifstream in("data_transport.csv");
     string line;
     getline(in, line);
     while (!in.eof())
@@ -38,16 +38,12 @@ void read_file()
     y.clear();
     weights.clear();
 
-    x.push_back(0);
-    y.push_back(0);
-    weights.push_back(0);
-    frequence.push_back(0);
-    std::ifstream in("data_vertex_test.csv");
+    std::ifstream in("data_vertex.csv");
     string line;
     getline(in, line);
     double s = 0;
-    double X_mean = 0;
-    double Y_mean = 0;
+    //double X_mean = 0;
+    //double Y_mean = 0;
     
     while (!in.eof())
     {
@@ -56,13 +52,13 @@ void read_file()
         frequence.push_back(freq);
         x.push_back(X);
         y.push_back(Y);
-        X_mean += X;
-        Y_mean += Y;
+        //X_mean += X;
+        //Y_mean += Y;
         weights.push_back(w);
         s += w;
     }
-    x[0] = X_mean / (x.size() - 1);
-    y[0] = Y_mean / (y.size() - 1);
+    //x[0] = X_mean / (x.size() - 1);
+    //y[0] = Y_mean / (y.size() - 1);
     cout << "sum volume: " << s << endl;
     in.close();
 }
@@ -188,16 +184,18 @@ bool check_matrix(const vector<int_matrix>& routs, const size_t size)
             cout << 0 << "]," << endl;
         }
     }
-
+    bool is_twice = false;
+    bool is_null = false;
     for (size_t i = 1; i < used.size(); ++i)
     {
-        if (used[i] != 1) {
-            int fff = 3;
-            int fdff = 3;
-            return false;
-        }
+        if (used[i] > 1)
+            is_twice = true;
+        if (used[i] == 0)
+            is_null = true;
     }
-    return true;
+    cout << "check is_twice: " << is_twice << endl;
+    cout << "check is_null: " << is_null << endl;
+    return !is_twice && !is_null;
 }
 
 void Ant_test()
@@ -222,6 +220,7 @@ void sweep_test()
     sweep.run();
     cout << "lenght: " << sweep.lenght() << endl;
     print(sweep.res);
+    cout << "check: " << check_matrix(sweep.res, dist_mat.size()) << endl;
 }
 
 void greedy_test()
@@ -235,11 +234,32 @@ void greedy_test()
     greedy.run();
     cout << "lenght: " << greedy.lenght() << endl;
     print(greedy.res);
+    cout << "check: " << check_matrix(greedy.res, dist_mat.size()) << endl;
+}
+
+void greedy_2opt_test()
+{
+    read_file();
+    read_transports();
+    auto P = utils::fill_matrix_and_sort(x, y);
+    dist_mat = P.first;
+
+    balancedVRP::project::GreadyBase greedy(dist_mat, P.second, weights, transports);
+    greedy.run();
+    for (int_matrix& rout_mat : greedy.res)
+        for (vector<size_t>& rout : rout_mat)
+        {
+            TSP::local_opt::opt_2_fast2(rout, dist_mat);
+            TSP::local_opt::opt_3(rout, dist_mat);
+        }
+    cout << "lenght: " << greedy.lenght() << endl;
+    print(greedy.res);
+    cout << "check: " << check_matrix(greedy.res, dist_mat.size()) << endl;
 }
 
 int main()
 {
-    greedy_test();
+    sweep_test();
     return 0;
     read_file();
     read_transports();
