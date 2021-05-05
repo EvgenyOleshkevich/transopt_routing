@@ -173,6 +173,17 @@ void print(const vector<int_matrix>& routs)
         }
 }
 
+void print(const int_matrix& routs)
+{
+    for (const vector<size_t>& rout : routs)
+    {
+        cout << "[";
+        for (const size_t vertex : rout)
+            cout << vertex << ", ";
+        cout << 0 << "]," << endl;
+    }
+}
+
 bool check_matrix(const vector<int_matrix>& routs, const size_t size)
 {
     vector<size_t> used(size, 0);
@@ -181,15 +192,36 @@ bool check_matrix(const vector<int_matrix>& routs, const size_t size)
         //cout << "new type" << endl;
         for (const vector<size_t>& rout : rout_mat)
         {
-            cout << "[" ;
+            //cout << "[" ;
             for (const size_t vertex : rout)
             {
                 ++used[vertex];
-                cout << vertex << ", ";
+                //cout << vertex << ", ";
             }
-            cout << 0 << "]," << endl;
+            //cout << 0 << "]," << endl;
         }
     }
+    bool is_twice = false;
+    bool is_null = false;
+    for (size_t i = 1; i < used.size(); ++i)
+    {
+        if (used[i] > 1)
+            is_twice = true;
+        if (used[i] == 0)
+            is_null = true;
+    }
+    cout << "check is_twice: " << is_twice << endl;
+    cout << "check is_null: " << is_null << endl;
+    return !is_twice && !is_null;
+}
+
+bool check_matrix(const int_matrix& routs, const size_t size)
+{
+    vector<size_t> used(size, 0);
+
+    for (const vector<size_t>& rout : routs)
+        for (const size_t vertex : rout)
+            ++used[vertex];
     bool is_twice = false;
     bool is_null = false;
     for (size_t i = 1; i < used.size(); ++i)
@@ -278,9 +310,34 @@ void clurk_test()
     cout << "check: " << check_matrix(clurk.res, dist_mat.size()) << endl;
 }
 
+void osman_test()
+{
+    read_file();
+    read_transports();
+    auto P = utils::fill_matrix_and_sort(x, y);
+    dist_mat = P.first;
+
+    balancedVRP::project::GreadyBase greedy(dist_mat, P.second, weights, transports);
+    greedy.run();
+    cout << "lenght greedy: " << greedy.lenght() << endl;
+    cout << "check: " << check_matrix(greedy.res, dist_mat.size()) << endl;
+
+    auto data = balancedVRP::project::Osman::transform_data(greedy.res);
+
+    balancedVRP::project::Osman osman(dist_mat, weights, transports, data.first,
+        data.second, data.first.size());
+
+    osman.run();
+    osman.add_zero_vertex();
+
+    print(osman.res);
+    cout << "lenght osman: " << osman.lenght() << endl;
+    cout << "check: " << check_matrix(osman.res, dist_mat.size()) << endl;
+}
+
 int main()
 {
-    clurk_test();
+    osman_test();
     return 0;
     read_file();
     read_transports();

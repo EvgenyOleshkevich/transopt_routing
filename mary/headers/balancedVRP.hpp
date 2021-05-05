@@ -164,7 +164,7 @@ namespace balancedVRP
 								break;
 							vertex = new_vertex;
 						}
-						std::cout << "remain_weight: " << remain_weight << std::endl;
+						//std::cout << "remain_weight: " << remain_weight << std::endl;
 						rout.push_back(0);
 						routs.push_back(rout);
 						if (count_add == used.size())
@@ -446,7 +446,7 @@ namespace balancedVRP
 		{
 		public:
 			Osman(const matrix& dist_mat, const vector<double>& weights,
-				const vector<Transport>& ransports, int_matrix routs,
+				const vector<Transport>& transports, int_matrix routs,
 				const vector<size_t>& transport_id, const size_t count_rout) :
 				res(routs), transport_id(transport_id),
 				dist_mat(dist_mat), transports(transports), weights(weights),
@@ -456,6 +456,8 @@ namespace balancedVRP
 
 			void run()
 			{
+				init_remain_weight();
+
 				std::unique_ptr<checker_change> checker(new checker_change_widht_local(this));
 				auto routs = res;
 				auto best_lenght = lenght();
@@ -465,7 +467,7 @@ namespace balancedVRP
 				fill_BSTM_RECM(routs, checker);
 				max_iter = 10;
 				unsigned int start_time = clock();
-				for (size_t i = 0; i < max_iter && clock() - start_time < 60000; ++i)
+				for (size_t i = 0; clock() - start_time < 60000; ++i)
 				{
 					auto index = get_max_free_BSTM(i, routs);
 					if (BSTM[index.first][index.second] == 0)
@@ -541,6 +543,40 @@ namespace balancedVRP
 				return lenght;
 			}
 
+			static pair<int_matrix, vector<size_t>> transform_data(const vector<int_matrix>& routs)
+			{
+				int_matrix res;
+				vector<size_t> transport_id;
+
+				for (size_t trans_id = 0; trans_id < routs.size(); trans_id++)
+					for (size_t i = 0; i < routs[trans_id].size(); i++)
+					{
+						transport_id.push_back(trans_id);
+						res.push_back(routs[trans_id][i]);
+					}
+				remove_zero_vertex(res);
+
+				return { res , transport_id };
+			}
+
+			static void remove_zero_vertex(int_matrix& routs)
+			{
+				for (size_t i = 0; i < routs.size(); i++)
+				{
+					routs[i].pop_back();
+					routs[i].erase(routs[i].begin());
+				}
+			}
+
+			void add_zero_vertex()
+			{
+				for (size_t i = 0; i < res.size(); i++)
+				{
+					res[i].push_back(0);
+					res[i].emplace(res[i].begin(), 0);
+				}
+			}
+
 			int_matrix res;
 			const vector<size_t>& transport_id;
 		private:
@@ -589,8 +625,8 @@ namespace balancedVRP
 					for (size_t i = 0; i < rout1.size(); ++i)
 						for (size_t j = 0; j < rout2.size(); ++j)
 						{
-							if (osman->remain_weight[p] + osman->weights[rout1[i]] - osman->weights[rout1[j]] < 0
-								|| osman->remain_weight[q] + osman->weights[rout1[j]] - osman->weights[rout1[i]] < 0)
+							if (osman->remain_weight[p] - osman->weights[rout1[i]] + osman->weights[rout2[j]] < 0
+								|| osman->remain_weight[q] + osman->weights[rout1[i]] - osman->weights[rout2[j]] < 0)
 								continue;
 							swap(rout1[i], rout2[j]);
 							double lenght = utils::length_rout(rout1, osman->dist_mat);
@@ -649,7 +685,7 @@ namespace balancedVRP
 						for (size_t i = 0; i < rout2.size(); ++i)
 							for (size_t j = 0; j < rout1.size(); ++j)
 							{
-								if (osman->remain_weight[p] - osman->weights[rout1[i]] < 0)
+								if (osman->remain_weight[p] - osman->weights[rout1[j]] < 0)
 									continue;
 								rout1.emplace(rout1.begin() + j, rout2[i]);
 								rout2.erase(rout2.begin() + i);
@@ -667,7 +703,7 @@ namespace balancedVRP
 						// вставка в конец
 						for (size_t i = 0; i < rout2.size(); ++i)
 						{
-							if (osman->remain_weight[p] - osman->weights[rout1[i]] < 0)
+							if (osman->remain_weight[p] - osman->weights[rout2[i]] < 0)
 								continue;
 							rout1.push_back(rout2[i]);
 							rout2.erase(rout2.begin() + i);
@@ -689,6 +725,19 @@ namespace balancedVRP
 					osman->RECM[q][p] = { {0, 0}, 6 };
 				}
 			};
+
+			void init_remain_weight()
+			{
+				remain_weight = vector<double>(res.size());
+				for (size_t i = 0; i < res.size(); i++)
+				{
+					double weight = 0;
+					for (const size_t vertex : res[i])
+						weight += weights[vertex];
+
+					remain_weight[i] = transports[transport_id[i]].capacity - weight;
+				}
+			}
 
 			vector<vector<int>> get_move_table()
 			{
