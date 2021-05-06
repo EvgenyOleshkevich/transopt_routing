@@ -145,7 +145,10 @@ namespace balancedVRP
 			vector<size_t> vertexes(dist_mat.size() - 1);
 			for (size_t i = 1; i < dist_mat.size(); i++)
 				vertexes[i - 1] = i;
-			return dichotomous_division_weight(dist_mat, weights, vertexes, capacity, count_cluster, true);
+			auto res = dichotomous_division_weight(dist_mat, weights, vertexes, capacity, count_cluster, true);
+			for (size_t i = 0; i < res.size(); i++)
+				res[i].emplace(res[i].begin(), 0);
+			return res;
 		}
 
 		int_matrix dichotomous_division_weight(const matrix& dist_mat,
@@ -354,16 +357,13 @@ namespace balancedVRP
 			vector<matrix> res;
 			for (size_t i = 0; i < clusters.size(); ++i) {
 				matrix cluster_dist_mat =
-					vector<vector<double>>(clusters[i].size() + 1,
-						vector<double>(clusters[i].size() + 1));
+					matrix(clusters[i].size(),
+						vector<double>(clusters[i].size()));
 
-				for (size_t j = 0; j < clusters[i].size(); ++j) {
-					cluster_dist_mat[j + 1][0] = dist_mat[clusters[i][j]][0];
-					cluster_dist_mat[0][j + 1] = dist_mat[0][clusters[i][j]];
-
+				for (size_t j = 0; j < clusters[i].size(); ++j)
 					for (size_t k = 0; k < clusters[i].size(); ++k)
-						cluster_dist_mat[j + 1][k + 1] = dist_mat[clusters[i][j]][clusters[i][k]];
-				}
+						cluster_dist_mat[j][k] = dist_mat[clusters[i][j]][clusters[i][k]];
+
 				res.push_back(cluster_dist_mat);
 			}
 			return res;
@@ -373,12 +373,11 @@ namespace balancedVRP
 		{
 			matrix weights;
 			for (size_t i = 0; i < clusters.size(); ++i) {
-				auto cluster_weight = vector<double>(clusters[i].size() + 1);
-				cluster_weight[0] = 0;
+				auto cluster_weight = vector<double>(clusters[i].size());
 
-				for (size_t j = 0; j < clusters[i].size(); ++j) {
-					cluster_weight[j + 1] = weight[clusters[i][j]];
-				}
+				for (size_t j = 0; j < clusters[i].size(); ++j)
+					cluster_weight[j] = weight[clusters[i][j]];
+
 				weights.push_back(cluster_weight);
 			}
 			return weights;

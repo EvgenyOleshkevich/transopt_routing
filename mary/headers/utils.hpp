@@ -28,11 +28,11 @@ namespace utils
 
     matrix fill_matrix(const double* const, const double* const, const size_t);
 
-    matrix fill_matrix(const vector<double>&, const vector<double>&, const size_t);
+    matrix fill_matrix(const vector<double>&, const vector<double>&);
 
     pair < matrix, sorted_matrix> fill_matrix_and_sort(const vector<double>&, const vector<double>&);
 
-    sorted_matrix fill_matrix_and_sort(const vector<double>&, const vector<double>&, const matrix&);
+    sorted_matrix fill_sort_matrix(const matrix& dist_mat);
 
     matrix fill_matrix_with_end_point(const vector<double>&, const vector<double>&);
 

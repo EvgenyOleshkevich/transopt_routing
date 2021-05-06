@@ -3,9 +3,6 @@
 #include <thread>
 #include <windows.h>
 
-
-
-
 using namespace std;
 using namespace algorithms;
 using namespace balancedVRP;
@@ -173,6 +170,20 @@ void print(const vector<int_matrix>& routs)
         }
 }
 
+void print(const vector<int_matrix>& routs, const int_matrix& clusters, const size_t clust_id)
+{
+    cout << "[" << endl;
+    for (const int_matrix& rout_mat : routs)
+        for (const vector<size_t>& rout : rout_mat)
+        {
+            cout << "[";
+            for (const size_t vertex : rout)
+                cout << clusters[clust_id][vertex] << ", ";
+            cout << 0 << "]," << endl;
+        }
+    cout << "]," << endl;
+}
+
 void print(const int_matrix& routs)
 {
     for (const vector<size_t>& rout : routs)
@@ -182,6 +193,45 @@ void print(const int_matrix& routs)
             cout << vertex << ", ";
         cout << 0 << "]," << endl;
     }
+}
+
+void print_file(const vector<int_matrix>& routs)
+{
+    std::ofstream out("res.txt");
+    for (const int_matrix& rout_mat : routs)
+        for (const vector<size_t>& rout : rout_mat)
+        {
+            for (const size_t vertex : rout)
+                out << vertex << " ";
+            out << ";";
+        }
+    out.close();
+}
+
+void print_file(const int_matrix& routs)
+{
+    std::ofstream out("res.txt");
+    for (const vector<size_t>& rout : routs)
+    {
+        for (const size_t vertex : rout)
+            out << vertex << " ";
+        out << ";";
+    }
+    out.close();
+}
+
+void print_file(const vector<int_matrix>& routs, const int_matrix& clusters, const size_t clust_id)
+{
+    std::ofstream out("res_clust.txt", std::ios::app);
+    for (const int_matrix& rout_mat : routs)
+        for (const vector<size_t>& rout : rout_mat)
+        {
+            for (const size_t vertex : rout)
+                out << clusters[clust_id][vertex] << " ";
+            out << ";";
+        }
+    out << ":";
+    out.close();
 }
 
 bool check_matrix(const vector<int_matrix>& routs, const size_t size)
@@ -210,8 +260,8 @@ bool check_matrix(const vector<int_matrix>& routs, const size_t size)
         if (used[i] == 0)
             is_null = true;
     }
-    cout << "check is_twice: " << is_twice << endl;
-    cout << "check is_null: " << is_null << endl;
+    //cout << "check is_twice: " << is_twice << endl;
+    //cout << "check is_null: " << is_null << endl;
     return !is_twice && !is_null;
 }
 
@@ -271,7 +321,7 @@ void greedy_test()
     balancedVRP::project::GreadyBase greedy(dist_mat, P.second, weights, transports);
     greedy.run();
     cout << "lenght: " << greedy.lenght() << endl;
-    print(greedy.res);
+    print_file(greedy.res);
     cout << "check: " << check_matrix(greedy.res, dist_mat.size()) << endl;
 }
 
@@ -335,9 +385,75 @@ void osman_test()
     cout << "check: " << check_matrix(osman.res, dist_mat.size()) << endl;
 }
 
+void save_cluster()
+{
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+    double capacity = 700;
+    auto clusters = balancedVRP::clustering::dichotomous_division_weight(dist_mat, weights, capacity, 7);
+
+    std::ofstream out("cluster.txt");
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        double weight = 0;
+        for (size_t j = 0; j < clusters[i].size(); j++)
+        {
+            weight += weights[clusters[i][j]];
+            out << clusters[i][j] << ' ';
+        }
+        out << ";";
+        cout << i << " claut weight: " << weight << " size: " << clusters[i].size() << endl;
+    }
+    out.close();
+
+    //    sum volume : 4215.56
+    //    frequence : 396
+    //    acc_weight : 1225.62
+    //    5441.18
+}
+
+void greedy_cluster_test()
+{
+    std::ofstream out("res_clust.txt");
+    out.close();
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+    double capacity = 700;
+    auto clusters = balancedVRP::clustering::dichotomous_division_weight(dist_mat, weights, capacity, 7);
+    
+    auto dist_inner_cluster = balancedVRP::clustering::get_dist_inner_cluster(dist_mat, clusters);
+    auto number_cluster = balancedVRP::clustering::get_number_cluster_by_vertex(clusters);
+    auto weight_inner_cluster = balancedVRP::clustering::get_weight_inner_cluster(weights, clusters);
+
+
+    double lenght = 0;
+    vector<size_t> checks;
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+
+        balancedVRP::project::GreadyBase greedy(
+            dist_inner_cluster[i],
+            sort_matrix,
+            weight_inner_cluster[i],
+            transports);
+        greedy.run();
+        lenght += greedy.lenght();
+        print_file(greedy.res, clusters, i);
+        checks.push_back(check_matrix(greedy.res, dist_inner_cluster[i].size()));
+    }
+
+    cout << "lenght: " << lenght << endl;
+    for (size_t check : checks)
+        cout << "check: " << check << endl;
+    
+}
+
 int main()
 {
-    osman_test();
+    greedy_cluster_test();
     return 0;
     read_file();
     read_transports();

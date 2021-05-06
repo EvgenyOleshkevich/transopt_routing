@@ -20,12 +20,11 @@ namespace utils
         return dist_mat;
     }
 
-    matrix fill_matrix(const vector<double>& x, const vector<double>& y,
-        const size_t count_point)
+    matrix fill_matrix(const vector<double>& x, const vector<double>& y)
     {
-        matrix dist_mat = vector<vector<double>>(count_point, vector<double>(count_point));
-        for (size_t i = 0; i < count_point; ++i)
-            for (size_t j = 0; j < count_point; ++j)
+        matrix dist_mat = vector<vector<double>>(x.size(), vector<double>(x.size()));
+        for (size_t i = 0; i < x.size(); ++i)
+            for (size_t j = 0; j < x.size(); ++j)
                 dist_mat[i][j] = std::sqrt(sqr(x[i] - x[j]) + sqr(y[i] - y[j]));
         return dist_mat;
     }
@@ -55,13 +54,9 @@ namespace utils
         return { dist_mat, sorted_edges };
     }
 
-    sorted_matrix fill_matrix_and_sort(const vector<double>& x, const vector<double>& y,
-        const matrix& dist_mat)
+    sorted_matrix fill_sort_matrix( const matrix& dist_mat)
     {
-        if (x.size() != y.size() || y.size() != dist_mat.size())
-            return sorted_matrix() ;
-
-        const size_t count_point = x.size();
+        const size_t count_point = dist_mat.size();
         sorted_matrix sorted_edges(count_point, vector<std::pair<double, size_t>>(count_point));
         for (size_t i = 0; i < count_point; ++i)
         {
