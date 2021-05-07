@@ -27,6 +27,9 @@ namespace TSP
 
         // require zero vertex
         void opt_2_fast2(std::vector<size_t>&, const matrix&);
+
+        // require zero vertex
+        double opt_2_fast2(std::vector<size_t>&, const matrix&, const double);
         
         // require zero vertex
         void opt_2_best_step(std::vector<size_t>&, const matrix&);

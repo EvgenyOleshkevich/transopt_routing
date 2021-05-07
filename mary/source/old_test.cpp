@@ -1,3 +1,100 @@
+#ifdef DEBUG_TEST_07_05_2021
+
+void cluster_test1()
+{
+    dist_mat = utils::fill_matrix_with_end_point(x, y);
+
+    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, 7);
+
+    double acc = 0;
+    double acc_weight = 0;
+    for (const auto& cluster : clusters)
+        for (auto vertex : cluster)
+        {
+            if (frequence[vertex] == 2)
+            {
+                acc += 3;
+                acc_weight += 3 * weights[vertex];
+            }
+            else if (frequence[vertex] == 3)
+            {
+                acc += 2;
+                acc_weight += 2 * weights[vertex];
+            }
+            else if (frequence[vertex] == 4)
+            {
+                acc += 1;
+                acc_weight += weights[vertex];
+            }
+        }
+
+    cout << "frequence: " << acc << endl;
+    cout << "acc_weight: " << acc_weight << endl;
+
+
+    auto vertex_x_clust = clustering::get_number_cluster_by_vertex(clusters);
+
+    cout << "vertex_x_clust.size(): " << vertex_x_clust.size() << endl;
+    //    sum volume : 4215.56
+    //    frequence : 396
+    //    acc_weight : 1225.62
+}
+
+void cluster_test2()
+{
+    dist_mat = utils::fill_matrix_with_end_point(x, y);
+    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, 7);
+
+    double acc = 0;
+    double acc_weight = 0;
+    for (const auto& cluster : clusters)
+        for (auto vertex : cluster)
+        {
+            if (frequence[vertex] == 2)
+            {
+                acc += 3;
+                acc_weight += 3 * weights[vertex];
+            }
+            else if (frequence[vertex] == 3)
+            {
+                acc += 2;
+                acc_weight += 2 * weights[vertex];
+            }
+            else if (frequence[vertex] == 4)
+            {
+                acc += 1;
+                acc_weight += weights[vertex];
+            }
+        }
+
+    cout << "frequence: " << acc << endl;
+    cout << "acc_weight: " << acc_weight << endl;
+
+
+    auto clusters2 = project::clusters_with_multiple_duplicates(clusters, frequence);
+
+    acc_weight = 0;
+    for (const auto& cluster : clusters2)
+        for (auto vertex : cluster)
+        {
+            acc_weight += weights[vertex];
+        }
+
+    cout << "acc_weight: " << acc_weight << endl;
+    //    sum volume : 4215.56
+    //    frequence : 396
+    //    acc_weight : 1225.62
+    //    5441.18
+}
+
+void Test(vector<double>& vec) {
+    vec.clear();
+}
+
+
+#endif // DEBUG
+
+
 #ifdef DEBUG_TEST_26_04_2021
 
 const size_t count_point = 51;

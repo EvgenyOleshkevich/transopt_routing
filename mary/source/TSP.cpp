@@ -279,6 +279,59 @@ namespace TSP
             }
         }
 
+        double opt_2_fast2(std::vector<size_t>& rout, const matrix& dist_mat, const double coef)
+        {
+            size_t segment1 = 0;
+            size_t segment2 = 0;
+            double cur_len = utils::length_rout(rout, dist_mat);
+            double best_len = cur_len * coef;
+            // intial and final position are fixed (initial/final node remains 0)
+            for (int i = 1; i < rout.size() - 2; i++)
+            {
+                size_t A1 = rout[i - 1];
+                size_t A2 = rout[i];
+                double A_B_reverse_len = 0;
+                for (int j = i + 1; j < rout.size() - 1; j++)
+                {
+                    size_t B1 = rout[j];
+                    size_t B2 = rout[j + 1];
+                    A_B_reverse_len += dist_mat[B1][rout[j - 1]] - dist_mat[rout[j - 1]][B1];
+
+                    double len = cur_len + A_B_reverse_len
+                        + dist_mat[A1][B1] + dist_mat[A2][B2]
+                        - dist_mat[A1][A2] - dist_mat[B1][B2];
+                    if (best_len > len)
+                    {
+                        best_len = len;
+                        cur_len = len;
+                        segment1 = i;
+                        segment2 = j;
+
+                        size_t index = 0;
+                        auto best_rout = rout;
+
+                        for (int k = 0; k < segment1; ++k)
+                        {
+                            rout[index] = best_rout[k];
+                            ++index;
+                        }
+                        for (int k = segment2; k >= segment1; --k)
+                        {
+                            rout[index] = best_rout[k];
+                            ++index;
+                        }
+                        for (size_t k = segment2 + 1; k < best_rout.size(); ++k)
+                        {
+                            rout[index] = best_rout[k];
+                            ++index;
+                        }
+                    }
+                }
+            }
+
+            return best_len;
+        }
+
         void opt_2_best_step(std::vector<size_t>& rout, const matrix& dist_mat)
         {
 
