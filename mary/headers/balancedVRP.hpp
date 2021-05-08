@@ -914,6 +914,47 @@ namespace balancedVRP
 			void run() {
 				init_remain_weight();
 				double best_len = lenght_withuot_start();
+				auto routs = res;
+
+				std::random_device rd;
+				std::mt19937 mersenne_rand = std::mt19937(rd());
+
+				using ptr = std::unique_ptr<Neighborhood>;
+				vector<ptr> methods;
+				methods.push_back(ptr(new Opt2(this)));
+				methods.push_back(ptr(new VertexShift(this)));
+				methods.push_back(ptr(new EdgeShift(this)));
+				methods.push_back(ptr(new VertexSwap(this)));
+				methods.push_back(ptr(new EdgeSwap(this)));
+				methods.push_back(ptr(new VertexRoutSwap(this)));
+				methods.push_back(ptr(new VertexRoutEject(this)));
+
+				vector<size_t> used(methods.size(), 1);
+				size_t used_count = methods.size();
+
+				unsigned int start_time = clock();
+				while (clock() - start_time < time_limit)
+				{
+					size_t rand_value = mersenne_rand() % used_count;
+					size_t sum_value = 0;
+					size_t meth = 0;
+					for (; meth < methods.size(); ++meth)
+					{
+						sum_value += used[meth];
+						if (sum_value > rand_value)
+							break;
+					}
+
+					double lenght =methods[meth]->check(routs);
+
+					if (best_len > lenght)
+					{
+						best_len = lenght;
+						res = routs;
+						++used[meth];
+						++used_count;
+					}
+				}
 			}
 
 			double lenght()
