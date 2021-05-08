@@ -945,7 +945,7 @@ namespace balancedVRP
 							break;
 					}
 
-					double lenght =methods[meth]->check(routs);
+					double lenght = methods[meth]->check(routs);
 
 					if (best_len > lenght)
 					{
@@ -1004,6 +1004,14 @@ namespace balancedVRP
 				return lenght;
 			}
 
+			double lenght_withuot_start(const int_matrix& routs)
+			{
+				double lenght = 0;
+				for (size_t i = 0; i < routs.size(); ++i)
+					lenght += utils::length_rout_0(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
+				return lenght;
+			}
+
 			class Neighborhood
 			{
 			public:
@@ -1020,13 +1028,13 @@ namespace balancedVRP
 					double lenght = 0;
 
 					for (size_t i = 0; i < routs.size(); i++)
-						lenght += TSP::local_opt::opt_2_fast2(
+						TSP::local_opt::opt_2_fast2(
 							routs[i],
 							data->dist_mat,
 							data->coef_access) 
 							* data->transports[data->transport_id[i]].cost_by_dist;
 
-					return lenght;
+					return data->lenght_withuot_start(routs);
 				}
 			};
 
@@ -1035,7 +1043,6 @@ namespace balancedVRP
 			public:
 				VertexShift(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
 				double check(int_matrix& routs) override {
-					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
 					{
@@ -1043,6 +1050,9 @@ namespace balancedVRP
 
 						double cur_len = utils::length_rout(rout, data->dist_mat);
 						double best_len = cur_len * data->coef_access;
+
+						if (rout.size() < 4)
+							continue;
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 2; i++)
 						{
@@ -1071,11 +1081,9 @@ namespace balancedVRP
 								cur_len = best_len;
 							}
 						}
-						lenght += best_len
-							* data->transports[data->transport_id[r]].cost_by_dist;
 					}
 
-					return lenght;
+					return data->lenght_withuot_start(routs);
 				}
 			};
 
@@ -1084,7 +1092,6 @@ namespace balancedVRP
 			public:
 				EdgeShift(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
 				double check(int_matrix& routs) override {
-					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
 					{
@@ -1092,6 +1099,9 @@ namespace balancedVRP
 
 						double cur_len = utils::length_rout(rout, data->dist_mat);
 						double best_len = cur_len * data->coef_access;
+
+						if (rout.size() < 5)
+							continue;
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 3; i++)
 						{
@@ -1123,11 +1133,9 @@ namespace balancedVRP
 								cur_len = best_len;
 							}
 						}
-						lenght += best_len
-							* data->transports[data->transport_id[r]].cost_by_dist;
 					}
 
-					return lenght;
+					return data->lenght_withuot_start(routs);
 				}
 			};
 
@@ -1136,7 +1144,6 @@ namespace balancedVRP
 			public:
 				VertexSwap(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
 				double check(int_matrix& routs) override {
-					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
 					{
@@ -1144,6 +1151,9 @@ namespace balancedVRP
 
 						double cur_len = utils::length_rout(rout, data->dist_mat);
 						double best_len = cur_len * data->coef_access;
+
+						if (rout.size() < 4)
+							continue;
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 2; i++)
 						{
@@ -1177,11 +1187,9 @@ namespace balancedVRP
 								cur_len = best_len;
 							}
 						}
-						lenght += best_len
-							* data->transports[data->transport_id[r]].cost_by_dist;
 					}
 
-					return lenght;
+					return data->lenght_withuot_start(routs);
 				}
 			};
 
@@ -1190,7 +1198,6 @@ namespace balancedVRP
 			public:
 				EdgeSwap(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
 				double check(int_matrix& routs) override {
-					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
 					{
@@ -1198,6 +1205,9 @@ namespace balancedVRP
 
 						double cur_len = utils::length_rout(rout, data->dist_mat);
 						double best_len = cur_len * data->coef_access;
+
+						if (rout.size() < 6)
+							continue;
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 3; i++)
 						{
@@ -1234,11 +1244,9 @@ namespace balancedVRP
 								cur_len = best_len;
 							}
 						}
-						lenght += best_len
-							* data->transports[data->transport_id[r]].cost_by_dist;
 					}
 
-					return lenght;
+					return data->lenght_withuot_start(routs);
 				}
 			};
 
@@ -1300,7 +1308,7 @@ namespace balancedVRP
 
 						}
 
-					return data->lenght_withuot_start();;
+					return data->lenght_withuot_start(routs);
 				}
 			};
 
@@ -1359,7 +1367,7 @@ namespace balancedVRP
 
 						}
 
-					return data->lenght_withuot_start();;
+					return data->lenght_withuot_start(routs);
 				}
 			};
 		};
@@ -1510,6 +1518,13 @@ namespace balancedVRP
 
 						double cur_len = utils::length_rout(rout, data->dist_mat);
 						double best_len = cur_len * data->coef_access;
+
+						if (rout.size() < 4)
+						{
+							lenght += cur_len
+								* data->transports[data->transport_id[r]].cost_by_dist;
+							continue;
+						}
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 2; i++)
 						{
@@ -1559,6 +1574,13 @@ namespace balancedVRP
 
 						double cur_len = utils::length_rout(rout, data->dist_mat);
 						double best_len = cur_len * data->coef_access;
+
+						if (rout.size() < 5)
+						{
+							lenght += cur_len
+								* data->transports[data->transport_id[r]].cost_by_dist;
+							continue;
+						}
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 3; i++)
 						{
@@ -1611,6 +1633,13 @@ namespace balancedVRP
 
 						double cur_len = utils::length_rout(rout, data->dist_mat);
 						double best_len = cur_len * data->coef_access;
+
+						if (rout.size() < 4)
+						{
+							lenght += cur_len
+								* data->transports[data->transport_id[r]].cost_by_dist;
+							continue;
+						}
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 2; i++)
 						{
@@ -1665,6 +1694,13 @@ namespace balancedVRP
 
 						double cur_len = utils::length_rout(rout, data->dist_mat);
 						double best_len = cur_len * data->coef_access;
+
+						if (rout.size() < 6)
+						{
+							lenght += cur_len
+								* data->transports[data->transport_id[r]].cost_by_dist;
+							continue;
+						}
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 3; i++)
 						{

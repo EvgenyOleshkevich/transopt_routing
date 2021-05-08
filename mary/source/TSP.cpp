@@ -285,6 +285,10 @@ namespace TSP
             size_t segment2 = 0;
             double cur_len = utils::length_rout(rout, dist_mat);
             double best_len = cur_len * coef;
+
+            if (rout.size() < 4)
+                return cur_len;
+
             // intial and final position are fixed (initial/final node remains 0)
             for (int i = 1; i < rout.size() - 2; i++)
             {

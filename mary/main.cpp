@@ -14,6 +14,7 @@ vector<size_t> frequence;
 vector<vector<double>> dist_mat;
 vector<Transport> transports;
 const double clust_capacity = 700;
+const size_t count_clust = 7;
 
 void read_transports()
 {
@@ -305,7 +306,7 @@ void save_cluster()
     read_file();
     read_transports();
     dist_mat = utils::fill_matrix(x, y);
-    auto clusters = balancedVRP::clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, 7);
+    auto clusters = balancedVRP::clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
 
     std::ofstream out("cluster.txt");
     for (size_t i = 0; i < clusters.size(); i++)
@@ -334,7 +335,7 @@ void greedy_cluster_test()
     read_file();
     read_transports();
     dist_mat = utils::fill_matrix(x, y);
-    auto clusters = balancedVRP::clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, 7);
+    auto clusters = balancedVRP::clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
     
     auto dist_inner_cluster = balancedVRP::clustering::get_dist_inner_cluster(dist_mat, clusters);
     auto weight_inner_cluster = balancedVRP::clustering::get_weight_inner_cluster(weights, clusters);
@@ -370,7 +371,7 @@ void osman_cluster_test()
     read_file();
     read_transports();
     dist_mat = utils::fill_matrix(x, y);
-    auto clusters = balancedVRP::clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, 7);
+    auto clusters = balancedVRP::clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
 
     auto dist_inner_cluster = balancedVRP::clustering::get_dist_inner_cluster(dist_mat, clusters);
     auto weight_inner_cluster = balancedVRP::clustering::get_weight_inner_cluster(weights, clusters);
@@ -412,14 +413,48 @@ void osman_cluster_test()
 
 }
 
-void greedy_cluster_test2()
+void greedy_parallel_test()
+{
+    auto start_time = clock();
+    std::ofstream out("res_clust.txt");
+    out.close();
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+    auto clusters = balancedVRP::clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+    auto dist_inner_cluster = balancedVRP::clustering::get_dist_inner_cluster(dist_mat, clusters);
+    auto weight_inner_cluster = balancedVRP::clustering::get_weight_inner_cluster(weights, clusters);
+
+    vector<std::thread*> threads(clusters.size());
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+
+        project::GreadyBase greedy(
+            dist_inner_cluster[i],
+            sort_matrix,
+            weight_inner_cluster[i],
+            transports);
+        greedy.run();
+        auto thread = new std::thread(&project::GreadyBase::run, greedy);
+        threads.push_back(thread);
+        threads[i]->join();
+    }
+    for (size_t i = 0; i < clusters.size(); i++)
+        threads[i]->join();
+    // time: 1692
+    cout << "time: " << clock() - start_time;
+}
+
+void local_search_cluster_test()
 {
     std::ofstream out("res_clust.txt");
     out.close();
     read_file();
     read_transports();
     dist_mat = utils::fill_matrix(x, y);
-    auto clusters = balancedVRP::clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, 7);
+    auto clusters = balancedVRP::clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
 
     auto dist_inner_cluster = balancedVRP::clustering::get_dist_inner_cluster(dist_mat, clusters);
     auto weight_inner_cluster = balancedVRP::clustering::get_weight_inner_cluster(weights, clusters);
@@ -437,14 +472,26 @@ void greedy_cluster_test2()
             weight_inner_cluster[i],
             transports);
         greedy.run();
-        lenght += greedy.lenght();
 
-        for (size_t i = 0; i < greedy.res.size(); i++)
-            for (size_t j = 0; j < greedy.res[i].size(); j++)
-                TSP::local_opt::opt_3(greedy.res[i][j], dist_inner_cluster[i]);
+        auto data = project::Osman::transform_data(greedy.res);
 
-        print(greedy.res, clusters, i);
-        checks.push_back(check_matrix(greedy.res, dist_inner_cluster[i].size()));
+        project::Osman osman(dist_inner_cluster[i],
+            weight_inner_cluster[i],
+            transports, data.first,
+            data.second, data.first.size());
+
+        osman.add_zero_vertex();
+
+        project::WidhtNeighborhoodSearch local(dist_inner_cluster[i],
+            weight_inner_cluster[i],
+            transports, osman.res,
+            osman.transport_id);
+
+        local.run();
+
+        lenght += local.lenght();
+        //print_file(osman.res, clusters, i);
+        checks.push_back(check_matrix(local.res, dist_inner_cluster[i].size()));
     }
 
     cout << "lenght: " << lenght << endl;
@@ -458,9 +505,10 @@ int main()
     //int_matrix t(2, vector<size_t>(2, 0));
 
     //vector<size_t>& p = t[0];
-    //p[0] = 1;
+    //p[0] = 1; lenght: 15850.1
 
-    Ant_test();
+    // greedy_cluster_test();
+    local_search_cluster_test();
     return 0;
 }
 
