@@ -1,6 +1,7 @@
 #include "headers/algorithms.hpp"
 #include <fstream>
 #include <thread>
+#include <boost/thread>
 #include <windows.h>
 
 using namespace std;
@@ -208,7 +209,7 @@ bool check_transport(const int_matrix& routs, const vector<size_t>& transports_i
         double w = 0;
         for (const size_t vertex : routs[i])
             w += weights[vertex];
-        is_ok &= transports[transports_id[i]].capacity <= w;
+        is_ok &= transports[transports_id[i]].capacity >= w;
     }
 
     return is_ok;
@@ -459,7 +460,7 @@ void greedy_parallel_test()
     auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
     auto weight_inner_cluster = balancedVRP::clustering::get_weight_inner_cluster(weights, clusters);
 
-    vector<std::thread*> threads(clusters.size());
+    vector<std::shared_ptr<thread>> threads(clusters.size());
     for (size_t i = 0; i < clusters.size(); i++)
     {
         auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
@@ -470,12 +471,11 @@ void greedy_parallel_test()
             weight_inner_cluster[i],
             transports);
         greedy.run();
-        auto thread = new std::thread(&project::GreadyBase::run, greedy);
-        threads.push_back(thread);
-        threads[i]->join();
+        threads.push_back(std::make_shared<boost::thread>(&project::GreadyBase::run, greedy));
     }
-    for (size_t i = 0; i < clusters.size(); i++)
-        threads[i]->join();
+    for (auto t : threads) {
+        t->join();
+    }
     // time: 1692
     cout << "time: " << clock() - start_time;
 }
@@ -596,7 +596,7 @@ int main()
     //p[0] = 1; lenght: 15850.1
 
     // greedy_cluster_test();
-    local_search_cluster_test();
+    greedy_parallel_test();
     return 0;
 }
 

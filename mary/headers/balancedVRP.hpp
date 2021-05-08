@@ -533,9 +533,6 @@ namespace balancedVRP
 						best_lenght = len;
 						res = routs;
 					}
-					for (double t : remain_weight)
-						if (t < 0)
-							int u = 0;
 					recalculate_BSTM_RECM(routs, p, q, checker);
 				}
 			}
@@ -1293,8 +1290,8 @@ namespace balancedVRP
 								for (size_t j = 1; j < rout2.size() - 1; j++)
 								{
 									size_t B = rout2[j];
-									if (data->remain_weight[r1] - data->weights[A] + data->weights[B] < 0
-										|| data->remain_weight[r2] + data->weights[A] - data->weights[B] < 0)
+									if (data->remain_weight[r1] + data->weights[A] - data->weights[B] < 0
+										|| data->remain_weight[r2] - data->weights[A] + data->weights[B] < 0)
 										continue;
 									double add_len = (data->dist_mat[rout2[j - 1]][A]
 										+ data->dist_mat[A][rout2[j + 1]]) * cost2
@@ -1312,8 +1309,8 @@ namespace balancedVRP
 
 								if (to != 0)
 								{
-									data->remain_weight[r1] += data->weights[rout2[to]] - data->weights[A];
-									data->remain_weight[r2] += data->weights[A] - data->weights[rout2[to]];
+									data->remain_weight[r1] += data->weights[A] - data->weights[rout2[to]] ;
+									data->remain_weight[r2] += data->weights[rout2[to]] - data->weights[A];
 									swap(rout1[i], rout2[to]);
 									cur_len = best_len;
 								}
@@ -1370,8 +1367,8 @@ namespace balancedVRP
 
 								if (to != 0)
 								{
-									data->remain_weight[r1] -= data->weights[A];
-									data->remain_weight[r2] += data->weights[A];
+									data->remain_weight[r1] += data->weights[A];
+									data->remain_weight[r2] -= data->weights[A];
 									rout1.erase(rout1.begin() + i);
 									rout2.emplace(rout2.begin() + to, A);
 									cur_len = best_len;
@@ -1774,8 +1771,8 @@ namespace balancedVRP
 								for (size_t j = 1; j < rout2.size() - 1; j++)
 								{
 									size_t B = rout2[j];
-									if (data->remain_weight[r1] - data->weights[A] + data->weights[B] < 0
-										|| data->remain_weight[r2] + data->weights[A] - data->weights[B] < 0)
+									if (data->remain_weight[r1] + data->weights[A] - data->weights[B] < 0
+										|| data->remain_weight[r2] - data->weights[A] + data->weights[B] < 0)
 										continue;
 									double add_len = (data->dist_mat[rout2[j - 1]][A]
 										+ data->dist_mat[A][rout2[j + 1]]) * cost2
@@ -1793,8 +1790,8 @@ namespace balancedVRP
 
 								if (to != 0)
 								{
-									data->remain_weight[r1] += data->weights[rout2[to]] - data->weights[A];
-									data->remain_weight[r2] += data->weights[A] - data->weights[rout2[to]];
+									data->remain_weight[r1] += data->weights[A] - data->weights[rout2[to]];
+									data->remain_weight[r2] += data->weights[rout2[to]] - data->weights[A];
 									swap(rout1[i], rout2[to]);
 									cur_len = best_len;
 								}
@@ -1831,8 +1828,8 @@ namespace balancedVRP
 						{
 							size_t B = rout2[j];
 							if (data->frequence[B] != 1
-								|| data->remain_weight[r1] - data->weights[A] + data->weights[B] < 0
-								|| data->remain_weight[r2] + data->weights[A] - data->weights[B] < 0)
+								|| data->remain_weight[r1] + data->weights[A] - data->weights[B] < 0
+								|| data->remain_weight[r2] - data->weights[A] + data->weights[B] < 0)
 								continue;
 							double add_len = (data->dist_mat[rout2[j - 1]][A]
 								+ data->dist_mat[A][rout2[j + 1]]) * cost2
@@ -1850,8 +1847,8 @@ namespace balancedVRP
 
 						if (to != 0)
 						{
-							data->remain_weight[r1] += data->weights[rout2[to]] - data->weights[A];
-							data->remain_weight[r2] += data->weights[A] - data->weights[rout2[to]];
+							data->remain_weight[r1] += data->weights[A] - data->weights[rout2[to]];
+							data->remain_weight[r2] += data->weights[rout2[to]] - data->weights[A];
 							swap(rout1[i], rout2[to]);
 							cur_len = best_len;
 						}
@@ -1909,8 +1906,8 @@ namespace balancedVRP
 
 								if (to != 0)
 								{
-									data->remain_weight[r1] -= data->weights[A];
-									data->remain_weight[r2] += data->weights[A];
+									data->remain_weight[r1] += data->weights[A];
+									data->remain_weight[r2] -= data->weights[A];
 									rout1.erase(rout1.begin() + i);
 									rout2.emplace(rout2.begin() + to, A);
 									cur_len = best_len;
