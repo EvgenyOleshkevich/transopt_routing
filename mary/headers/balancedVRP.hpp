@@ -952,7 +952,7 @@ namespace balancedVRP
 				}
 			}
 
-			double lenght_withot_start()
+			double lenght_withuot_start()
 			{
 				double lenght = 0;
 				for (size_t i = 0; i < res.size(); ++i)
@@ -1010,8 +1010,6 @@ namespace balancedVRP
 
 							for (size_t j = i + 1; j < rout.size() - 1; j++)
 							{
-								
-								size_t B = rout[j];
 								double add_len = data->dist_mat[rout[j]][A]
 									+ data->dist_mat[A][rout[j + 1]];
 
@@ -1062,8 +1060,6 @@ namespace balancedVRP
 
 							for (size_t j = i + 2; j < rout.size() - 1; j++)
 							{
-
-								size_t B = rout[j];
 								double add_len = data->dist_mat[rout[j]][A1]
 									+ data->dist_mat[A2][rout[j + 1]];
 
@@ -1088,6 +1084,238 @@ namespace balancedVRP
 					}
 
 					return lenght;
+				}
+			};
+
+			class VertexSwap : public Neighborhood
+			{
+			public:
+				VertexSwap(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
+				double check(int_matrix routs) override {
+					double lenght = 0;
+
+					for (size_t r = 0; r < routs.size(); r++)
+					{
+						vector<size_t>& rout = routs[r];
+
+						double cur_len = utils::length_rout(rout, data->dist_mat);
+						double best_len = cur_len * data->coef_access;
+						// intial and final position are fixed (initial/final node remains 0)
+						for (size_t i = 1; i < rout.size() - 2; i++)
+						{
+							size_t A = rout[i];
+							double len = cur_len
+								- data->dist_mat[rout[i - 1]][A]
+								- data->dist_mat[A][rout[i + 1]];
+							size_t to = i;
+
+							for (size_t j = i + 2; j < rout.size() - 1; j++)
+							{
+
+								size_t B = rout[j];
+								double add_len = data->dist_mat[rout[j - 1]][A]
+									+ data->dist_mat[A][rout[j + 1]]
+									- data->dist_mat[rout[j - 1]][B]
+									- data->dist_mat[B][rout[j + 1]]
+									+ data->dist_mat[rout[i - 1]][B]
+									+ data->dist_mat[B][rout[i + 1]];
+
+								if (best_len > len + add_len)
+								{
+									best_len = len + add_len;
+									to = j;
+								}
+							}
+
+							if (to != i)
+							{
+								swap(rout[i], rout[to]);
+								cur_len = best_len;
+							}
+						}
+						lenght += best_len
+							* data->transports[data->transport_id[r]].cost_by_dist;
+					}
+
+					return lenght;
+				}
+			};
+
+			class EdgeSwap : public Neighborhood
+			{
+			public:
+				EdgeSwap(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
+				double check(int_matrix routs) override {
+					double lenght = 0;
+
+					for (size_t r = 0; r < routs.size(); r++)
+					{
+						vector<size_t>& rout = routs[r];
+
+						double cur_len = utils::length_rout(rout, data->dist_mat);
+						double best_len = cur_len * data->coef_access;
+						// intial and final position are fixed (initial/final node remains 0)
+						for (size_t i = 1; i < rout.size() - 3; i++)
+						{
+							size_t A1 = rout[i];
+							size_t A2 = rout[i + 1];
+							double len = cur_len
+								- data->dist_mat[rout[i - 1]][A1]
+								- data->dist_mat[A2][rout[i + 2]];
+							size_t to = i;
+
+							for (size_t j = i + 3; j < rout.size() - 2; j++)
+							{
+
+								size_t B1 = rout[j];
+								size_t B2 = rout[j + 1];
+								double add_len = data->dist_mat[rout[j - 1]][A1]
+									+ data->dist_mat[A2][rout[j + 1]]
+									- data->dist_mat[rout[j - 1]][B1]
+									- data->dist_mat[B2][rout[j + 1]]
+									+ data->dist_mat[rout[i - 1]][B1]
+									+ data->dist_mat[B2][rout[i + 1]];
+
+								if (best_len > len + add_len)
+								{
+									best_len = len + add_len;
+									to = j;
+								}
+							}
+
+							if (to != i)
+							{
+								swap(rout[i], rout[to]);
+								swap(rout[i + 1], rout[to + 1]);
+								cur_len = best_len;
+							}
+						}
+						lenght += best_len
+							* data->transports[data->transport_id[r]].cost_by_dist;
+					}
+
+					return lenght;
+				}
+			};
+
+			class VertexRoutSwap : public Neighborhood
+			{
+			public:
+				VertexRoutSwap(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
+				double check(int_matrix routs) override {
+					for (size_t r1 = 0; r1 < routs.size(); r1++)
+						for (size_t r2 = r1 + 1; r2 < routs.size(); r2++)
+						{
+							vector<size_t>& rout1 = routs[r1];
+							vector<size_t>& rout2 = routs[r2];
+							double cost1 = data->transports[data->transport_id[r1]].cost_by_dist;
+							double cost2 = data->transports[data->transport_id[r2]].cost_by_dist;
+							double cur_len = utils::length_rout(rout1, data->dist_mat)
+								* cost1
+								+ utils::length_rout(rout2, data->dist_mat)
+								* cost2;
+							double best_len = cur_len * data->coef_access;
+							// intial and final position are fixed (initial/final node remains 0)
+							for (size_t i = 1; i < rout1.size() - 1; i++)
+							{
+								size_t A = rout1[i];
+								double len = cur_len
+									- (data->dist_mat[rout1[i - 1]][A]
+									+ data->dist_mat[A][rout1[i + 1]]) * cost1;
+								size_t to = 0;
+								size_t B = 0;
+
+								for (size_t j = 1; j < rout2.size() - 1; j++)
+								{
+									B = rout2[j];
+									if (data->remain_weight[r1] - data->weights[A] + data->weights[B] < 0
+										|| data->remain_weight[r2] + data->weights[A] - data->weights[B] < 0)
+										continue;
+									double add_len = (data->dist_mat[rout2[j - 1]][A]
+										+ data->dist_mat[A][rout2[j + 1]]) * cost2
+										- (data->dist_mat[rout2[j - 1]][B]
+										+ data->dist_mat[B][rout2[j + 1]]) * cost2
+										+ (data->dist_mat[rout1[i - 1]][B]
+										+ data->dist_mat[B][rout1[i + 1]]) * cost1;
+
+									if (best_len > len + add_len)
+									{
+										best_len = len + add_len;
+										to = j;
+									}
+								}
+
+								if (to != 0)
+								{
+									data->remain_weight[r1] += data->weights[B] - data->weights[A];
+									data->remain_weight[r2] += data->weights[A] - data->weights[B]; < 0
+									swap(rout1[i], rout2[to]);
+									cur_len = best_len;
+								}
+							}
+
+						}
+
+					return data->lenght_withuot_start();;
+				}
+			};
+
+			class VertexRoutEject : public Neighborhood
+			{
+			public:
+				VertexRoutEject(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
+				double check(int_matrix routs) override {
+					for (size_t r1 = 0; r1 < routs.size(); r1++)
+						for (size_t r2 = 0; r2 < routs.size(); r2++)
+						{
+							if (r1 == r2)
+								continue;
+							vector<size_t>& rout1 = routs[r1];
+							vector<size_t>& rout2 = routs[r2];
+							double cost1 = data->transports[data->transport_id[r1]].cost_by_dist;
+							double cost2 = data->transports[data->transport_id[r2]].cost_by_dist;
+							double cur_len = utils::length_rout(rout1, data->dist_mat)
+								* cost1
+								+ utils::length_rout(rout2, data->dist_mat)
+								* cost2;
+							double best_len = cur_len * data->coef_access;
+							// intial and final position are fixed (initial/final node remains 0)
+							for (size_t i = 1; i < rout1.size() - 1; i++)
+							{
+								size_t A = rout1[i];
+								if (data->remain_weight[r2] < data->weights[A]);
+									continue;
+								double len = cur_len
+									- (data->dist_mat[rout1[i - 1]][A]
+										+ data->dist_mat[A][rout1[i + 1]]) * cost1;
+								size_t to = 0;
+
+								for (size_t j = 1; j < rout2.size(); j++)
+								{
+
+									double add_len = (data->dist_mat[rout2[j - 1]][A]
+										+ data->dist_mat[A][rout2[j]]) * cost2;
+
+									if (best_len > len + add_len)
+									{
+										best_len = len + add_len;
+										to = j;
+									}
+								}
+
+								if (to != 0)
+								{
+									data->remain_weight[r1] -= data->weights[A];
+									data->remain_weight[r2] += data->weights[A];
+									rout1.erase(rout1.begin() + i);
+									rout2.emplace(rout1.begin() + to, A);
+									cur_len = best_len;
+								}
+							}
+
+						}
+
+					return data->lenght_withuot_start();;
 				}
 			};
 		};
