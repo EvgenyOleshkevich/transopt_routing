@@ -467,7 +467,7 @@ namespace balancedVRP
 				fill_BSTM_RECM(routs, checker);
 				max_iter = 10;
 				unsigned int start_time = clock();
-				for (size_t i = 0; clock() - start_time < 60000; ++i)
+				for (size_t i = 0; clock() - start_time < time_limit; ++i)
 				{
 					auto index = get_max_free_BSTM(i, routs);
 					if (BSTM[index.first][index.second] == 0)
@@ -595,6 +595,7 @@ namespace balancedVRP
 			const size_t ts;// длина списка запрета
 			const size_t count_rout;
 			const double coef_access = 1.05;
+			const double time_limit = 50000;
 
 			vector<vector<size_t>> BSTM;
 			vector<vector<pair<pair<size_t, size_t>, size_t>>> RECM;
@@ -911,7 +912,8 @@ namespace balancedVRP
 			{}
 
 			void run() {
-			
+				init_remain_weight();
+				double best_len = lenght_withuot_start();
 			}
 
 			double lenght()
@@ -937,6 +939,7 @@ namespace balancedVRP
 			const vector<Transport>& transports;
 			const vector<double>& weights;
 			const double coef_access = 1.05;
+			const double time_limit = 30000;
 			vector<double> remain_weight;
 
 			void init_remain_weight()
@@ -1382,11 +1385,10 @@ namespace balancedVRP
 			vector<size_t> vertex_used;
 		};
 
-		pair<vector<int_matrix>, double> run()
+		void run()
 		{
 			double best_lenght = UINT32_MAX;
 			vector<int_matrix> best_res;
-
 
 			double min_weight = min_weight_vertex();
 			double max_weight = max_weight_vertex();
@@ -1402,7 +1404,7 @@ namespace balancedVRP
 				for (size_t iter = 1; iter < count_iter_inner; ++iter) {
 
 					Calc_data data = fill_data();
-					vector<int_matrix> res(transports.size());
+					vector<int_matrix> cur_res(transports.size());
 
 					for (size_t used = 1; used < weights.size(); ++used)
 					{
@@ -1439,7 +1441,7 @@ namespace balancedVRP
 						if (data.ants[trans].remain_volume < min_weight) {
 							data.ants[trans].rout.push_back(0);
 							routs[transport_type].push_back(data.ants[trans].rout);
-							res[transport_type].push_back(data.ants[trans].rout);
+							cur_res[transport_type].push_back(data.ants[trans].rout);
 							data.ants.erase(data.ants.begin() + trans);
 						}
 					}
@@ -1447,23 +1449,22 @@ namespace balancedVRP
 					{
 						ant.rout.push_back(0);
 						routs[ant.transport_type].push_back(ant.rout);
-						res[ant.transport_type].push_back(ant.rout);
+						cur_res[ant.transport_type].push_back(ant.rout);
 					}
 
-					double lenght = length_roust(res);
+					double lenght = length_roust(cur_res);
 
 					if (best_lenght > lenght) {
 						best_lenght = lenght;
-						best_res = res;
+						best_res = cur_res;
 					}
 				}
 				// 130-131
 				calcalate_pheromone(routs);
-				unsigned int cur_time = clock();
 				//unsigned int diff = cur_time - prev_cur_time;
 				//prev_cur_time = cur_time;
 				//std::cout << diff << std::endl;
-				if (cur_time - start_time > 30000)
+				if (clock() - start_time > time_limit)
 					break;
 			}
 
@@ -1471,9 +1472,30 @@ namespace balancedVRP
 				for (size_t j = 0; j < best_res[i].size(); ++j)
 					TSP::local_opt::opt_2_fast2(best_res[i][j], dist_mat);
 
-			return { best_res,length_roust(best_res)};
+			res = best_res;
 		}
 
+		double length_roust(const vector<int_matrix>& routs)
+		{
+			double lenght = 0;
+			for (size_t trans_type = 0; trans_type < routs.size(); ++trans_type)
+				for (const vector<size_t>& rout : routs[trans_type])
+					lenght += utils::length_rout_0(rout, dist_mat) * transports[trans_type].cost_by_dist + transports[trans_type].cost_start;
+
+			return lenght;
+		}
+
+		double length_roust()
+		{
+			double lenght = 0;
+			for (size_t trans_type = 0; trans_type < res.size(); ++trans_type)
+				for (const vector<size_t>& rout : res[trans_type])
+					lenght += utils::length_rout_0(rout, dist_mat) * transports[trans_type].cost_by_dist + transports[trans_type].cost_start;
+
+			return lenght;
+		}
+
+		vector<int_matrix> res;
 	private:
 		const matrix& dist_mat;
 		const vector<Transport>& transports;
@@ -1486,6 +1508,7 @@ namespace balancedVRP
 		const double alpha = 1;
 		const double beta = 4;
 		const size_t count_iter_inner = 10;
+		const double time_limit = 30000;
 
 		const double evaporation_rate = 0.8; // коэфициент испарения
 		//const double addition_pheromone_rate = 0.8; // коэфициент добавленяи феромона
@@ -1651,16 +1674,6 @@ namespace balancedVRP
 					break;
 			}
 			return { used_trans , vertex };
-		}
-
-		double length_roust(vector<int_matrix> routs)
-		{
-			double lenght = 0;
-			for (size_t trans_type = 0; trans_type < routs.size(); ++trans_type)
-				for (const vector<size_t>& rout : routs[trans_type])
-					lenght += utils::length_rout_0(rout, dist_mat) * transports[trans_type].cost_by_dist + transports[trans_type].cost_start;
-
-			return lenght;
 		}
 	};
 }
