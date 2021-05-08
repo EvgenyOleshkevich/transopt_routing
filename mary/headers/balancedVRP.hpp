@@ -595,7 +595,7 @@ namespace balancedVRP
 			const size_t ts;// длина списка запрета
 			const size_t count_rout;
 			const double coef_access = 1.05;
-			const double time_limit = 50000;
+			const double time_limit = 40000;
 
 			vector<vector<size_t>> BSTM;
 			vector<vector<pair<pair<size_t, size_t>, size_t>>> RECM;
@@ -931,6 +931,8 @@ namespace balancedVRP
 
 				vector<size_t> used(methods.size(), 1);
 				size_t used_count = methods.size();
+				used[0] += 5;
+				used_count += 5;
 
 				unsigned int start_time = clock();
 				while (clock() - start_time < time_limit)
@@ -955,6 +957,9 @@ namespace balancedVRP
 						++used_count;
 					}
 				}
+				for (size_t f : used)
+					std::cout << f << " ";
+				std::cout << std::endl;
 			}
 
 			double lenght()
@@ -979,8 +984,8 @@ namespace balancedVRP
 			const matrix& dist_mat;
 			const vector<Transport>& transports;
 			const vector<double>& weights;
-			const double coef_access = 1.05;
-			const double time_limit = 30000;
+			const double coef_access = 1.09;
+			const double time_limit = 20000;
 			vector<double> remain_weight;
 
 			void init_remain_weight()
@@ -1030,10 +1035,7 @@ namespace balancedVRP
 					for (size_t i = 0; i < routs.size(); i++)
 						TSP::local_opt::opt_2_fast2(
 							routs[i],
-							data->dist_mat,
-							data->coef_access) 
-							* data->transports[data->transport_id[i]].cost_by_dist;
-
+							data->dist_mat);
 					return data->lenght_withuot_start(routs);
 				}
 			};
@@ -1275,11 +1277,10 @@ namespace balancedVRP
 									- (data->dist_mat[rout1[i - 1]][A]
 									+ data->dist_mat[A][rout1[i + 1]]) * cost1;
 								size_t to = 0;
-								size_t B = 0;
 
 								for (size_t j = 1; j < rout2.size() - 1; j++)
 								{
-									B = rout2[j];
+									size_t B = rout2[j];
 									if (data->remain_weight[r1] - data->weights[A] + data->weights[B] < 0
 										|| data->remain_weight[r2] + data->weights[A] - data->weights[B] < 0)
 										continue;
@@ -1299,8 +1300,8 @@ namespace balancedVRP
 
 								if (to != 0)
 								{
-									data->remain_weight[r1] += data->weights[B] - data->weights[A];
-									data->remain_weight[r2] += data->weights[A] - data->weights[B];
+									data->remain_weight[r1] += data->weights[rout2[to]] - data->weights[A];
+									data->remain_weight[r2] += data->weights[A] - data->weights[rout2[to]];
 									swap(rout1[i], rout2[to]);
 									cur_len = best_len;
 								}
@@ -1360,7 +1361,7 @@ namespace balancedVRP
 									data->remain_weight[r1] -= data->weights[A];
 									data->remain_weight[r2] += data->weights[A];
 									rout1.erase(rout1.begin() + i);
-									rout2.emplace(rout1.begin() + to, A);
+									rout2.emplace(rout2.begin() + to, A);
 									cur_len = best_len;
 								}
 							}
@@ -1404,6 +1405,8 @@ namespace balancedVRP
 
 				vector<size_t> used(methods.size(), 1);
 				size_t used_count = methods.size();
+				used[0] += 5;
+				used_count += 5;
 
 				unsigned int start_time = clock();
 				while (clock() - start_time < time_limit)
@@ -1428,6 +1431,9 @@ namespace balancedVRP
 						++used_count;
 					}
 				}
+				for (size_t f : used)
+					std::cout << f << " ";
+				std::cout << std::endl;
 			}
 
 			double lenght()
@@ -1454,8 +1460,8 @@ namespace balancedVRP
 			const matrix& dist_mat;
 			const vector<Transport>& transports;
 			const vector<double>& weights;
-			const double coef_access = 1.05;
-			const double time_limit = 30000;
+			const double coef_access = 1.09;
+			const double time_limit = 120000;
 			vector<double> remain_weight;
 
 			void init_remain_weight()
@@ -1479,6 +1485,14 @@ namespace balancedVRP
 				return lenght;
 			}
 
+			double lenght_withuot_start(const int_matrix& routs)
+			{
+				double lenght = 0;
+				for (size_t i = 0; i < routs.size(); ++i)
+					lenght += utils::length_rout_0(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
+				return lenght;
+			}
+
 			class Neighborhood
 			{
 			public:
@@ -1495,13 +1509,10 @@ namespace balancedVRP
 					double lenght = 0;
 
 					for (size_t i = 0; i < routs.size(); i++)
-						lenght += TSP::local_opt::opt_2_fast2(
+						TSP::local_opt::opt_2_fast2(
 							routs[i],
-							data->dist_mat,
-							data->coef_access)
-						* data->transports[data->transport_id[i]].cost_by_dist;
-
-					return lenght;
+							data->dist_mat);
+					return data->lenght_withuot_start(routs);
 				}
 			};
 
@@ -1510,7 +1521,6 @@ namespace balancedVRP
 			public:
 				VertexShift(GlobalWidhtNeighborhoodSearch* data) : Neighborhood(data) {}
 				double check(int_matrix& routs) override {
-					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
 					{
@@ -1520,11 +1530,7 @@ namespace balancedVRP
 						double best_len = cur_len * data->coef_access;
 
 						if (rout.size() < 4)
-						{
-							lenght += cur_len
-								* data->transports[data->transport_id[r]].cost_by_dist;
 							continue;
-						}
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 2; i++)
 						{
@@ -1553,11 +1559,9 @@ namespace balancedVRP
 								cur_len = best_len;
 							}
 						}
-						lenght += best_len
-							* data->transports[data->transport_id[r]].cost_by_dist;
 					}
 
-					return lenght;
+					return data->lenght_withuot_start(routs);
 				}
 			};
 
@@ -1566,7 +1570,6 @@ namespace balancedVRP
 			public:
 				EdgeShift(GlobalWidhtNeighborhoodSearch* data) : Neighborhood(data) {}
 				double check(int_matrix& routs) override {
-					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
 					{
@@ -1576,11 +1579,7 @@ namespace balancedVRP
 						double best_len = cur_len * data->coef_access;
 
 						if (rout.size() < 5)
-						{
-							lenght += cur_len
-								* data->transports[data->transport_id[r]].cost_by_dist;
 							continue;
-						}
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 3; i++)
 						{
@@ -1612,11 +1611,9 @@ namespace balancedVRP
 								cur_len = best_len;
 							}
 						}
-						lenght += best_len
-							* data->transports[data->transport_id[r]].cost_by_dist;
 					}
 
-					return lenght;
+					return data->lenght_withuot_start(routs);
 				}
 			};
 
@@ -1625,7 +1622,6 @@ namespace balancedVRP
 			public:
 				VertexSwap(GlobalWidhtNeighborhoodSearch* data) : Neighborhood(data) {}
 				double check(int_matrix& routs) override {
-					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
 					{
@@ -1635,11 +1631,7 @@ namespace balancedVRP
 						double best_len = cur_len * data->coef_access;
 
 						if (rout.size() < 4)
-						{
-							lenght += cur_len
-								* data->transports[data->transport_id[r]].cost_by_dist;
 							continue;
-						}
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 2; i++)
 						{
@@ -1673,11 +1665,9 @@ namespace balancedVRP
 								cur_len = best_len;
 							}
 						}
-						lenght += best_len
-							* data->transports[data->transport_id[r]].cost_by_dist;
 					}
 
-					return lenght;
+					return data->lenght_withuot_start(routs);
 				}
 			};
 
@@ -1686,7 +1676,6 @@ namespace balancedVRP
 			public:
 				EdgeSwap(GlobalWidhtNeighborhoodSearch* data) : Neighborhood(data) {}
 				double check(int_matrix& routs) override {
-					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
 					{
@@ -1696,11 +1685,7 @@ namespace balancedVRP
 						double best_len = cur_len * data->coef_access;
 
 						if (rout.size() < 6)
-						{
-							lenght += cur_len
-								* data->transports[data->transport_id[r]].cost_by_dist;
 							continue;
-						}
 						// intial and final position are fixed (initial/final node remains 0)
 						for (size_t i = 1; i < rout.size() - 3; i++)
 						{
@@ -1737,11 +1722,9 @@ namespace balancedVRP
 								cur_len = best_len;
 							}
 						}
-						lenght += best_len
-							* data->transports[data->transport_id[r]].cost_by_dist;
 					}
 
-					return lenght;
+					return data->lenght_withuot_start(routs);
 				}
 			};
 
@@ -1775,11 +1758,10 @@ namespace balancedVRP
 									- (data->dist_mat[rout1[i - 1]][A]
 										+ data->dist_mat[A][rout1[i + 1]]) * cost1;
 								size_t to = 0;
-								size_t B = 0;
 
 								for (size_t j = 1; j < rout2.size() - 1; j++)
 								{
-									B = rout2[j];
+									size_t B = rout2[j];
 									if (data->remain_weight[r1] - data->weights[A] + data->weights[B] < 0
 										|| data->remain_weight[r2] + data->weights[A] - data->weights[B] < 0)
 										continue;
@@ -1799,9 +1781,9 @@ namespace balancedVRP
 
 								if (to != 0)
 								{
-									data->remain_weight[r1] += data->weights[B] - data->weights[A];
-									data->remain_weight[r2] += data->weights[A] - data->weights[B];
-										swap(rout1[i], rout2[to]);
+									data->remain_weight[r1] += data->weights[rout2[to]] - data->weights[A];
+									data->remain_weight[r2] += data->weights[A] - data->weights[rout2[to]];
+									swap(rout1[i], rout2[to]);
 									cur_len = best_len;
 								}
 							}
@@ -1811,7 +1793,7 @@ namespace balancedVRP
 					return data->lenght_withuot_start();;
 				}
 
-				double check_different_clust(int_matrix& routs, const size_t r1, const size_t r2)
+				void check_different_clust(int_matrix& routs, const size_t r1, const size_t r2)
 				{
 					vector<size_t>& rout1 = routs[r1];
 					vector<size_t>& rout2 = routs[r2];
@@ -1832,11 +1814,10 @@ namespace balancedVRP
 							- (data->dist_mat[rout1[i - 1]][A]
 								+ data->dist_mat[A][rout1[i + 1]]) * cost1;
 						size_t to = 0;
-						size_t B = 0;
 
 						for (size_t j = 1; j < rout2.size() - 1; j++)
 						{
-							B = rout2[j];
+							size_t B = rout2[j];
 							if (data->frequence[B] != 1
 								|| data->remain_weight[r1] - data->weights[A] + data->weights[B] < 0
 								|| data->remain_weight[r2] + data->weights[A] - data->weights[B] < 0)
@@ -1857,8 +1838,8 @@ namespace balancedVRP
 
 						if (to != 0)
 						{
-							data->remain_weight[r1] += data->weights[B] - data->weights[A];
-							data->remain_weight[r2] += data->weights[A] - data->weights[B];
+							data->remain_weight[r1] += data->weights[rout2[to]] - data->weights[A];
+							data->remain_weight[r2] += data->weights[A] - data->weights[rout2[to]];
 							swap(rout1[i], rout2[to]);
 							cur_len = best_len;
 						}
@@ -1895,7 +1876,7 @@ namespace balancedVRP
 							{
 								size_t A = rout1[i];
 								if (data->remain_weight[r2] < data->weights[A]);
-								continue;
+									continue;
 								double len = cur_len
 									- (data->dist_mat[rout1[i - 1]][A]
 										+ data->dist_mat[A][rout1[i + 1]]) * cost1;
@@ -1919,7 +1900,7 @@ namespace balancedVRP
 									data->remain_weight[r1] -= data->weights[A];
 									data->remain_weight[r2] += data->weights[A];
 									rout1.erase(rout1.begin() + i);
-									rout2.emplace(rout1.begin() + to, A);
+									rout2.emplace(rout2.begin() + to, A);
 									cur_len = best_len;
 								}
 							}
@@ -1929,7 +1910,7 @@ namespace balancedVRP
 					return data->lenght_withuot_start();;
 				}
 
-				double check_different_clust(int_matrix& routs, const size_t r1, const size_t r2)
+				void check_different_clust(int_matrix& routs, const size_t r1, const size_t r2)
 				{
 					vector<size_t>& rout1 = routs[r1];
 					vector<size_t>& rout2 = routs[r2];
@@ -1970,7 +1951,7 @@ namespace balancedVRP
 							data->remain_weight[r1] -= data->weights[A];
 							data->remain_weight[r2] += data->weights[A];
 							rout1.erase(rout1.begin() + i);
-							rout2.emplace(rout1.begin() + to, A);
+							rout2.emplace(rout2.begin() + to, A);
 							cur_len = best_len;
 						}
 					}

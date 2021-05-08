@@ -420,7 +420,7 @@ namespace balancedVRP
 
 			for (size_t i = 0; i < clusters.size(); ++i)
 				for (size_t j = 0; j < clusters[i].size(); ++j)
-					if (frequence[clusters[i][j]] == 2) // clusters.size() - max period
+					if (frequence[clusters[i][j]] == 4) // clusters.size() - max period
 					{
 						res[(i + 2) % clusters.size()].push_back(clusters[i][j]);
 						res[(i + 4) % clusters.size()].push_back(clusters[i][j]);
@@ -430,7 +430,7 @@ namespace balancedVRP
 						res[(i + 3) % clusters.size()].push_back(clusters[i][j]);
 						res[(i + 6) % clusters.size()].push_back(clusters[i][j]);
 					}
-					else if (frequence[clusters[i][j]] == 4) {
+					else if (frequence[clusters[i][j]] == 2) {
 						res[(i + 4) % clusters.size()].push_back(clusters[i][j]);
 					}
 
