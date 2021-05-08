@@ -483,12 +483,16 @@ namespace balancedVRP
 					{
 						move_table[p][routs[p][a]] = i;
 						move_table[q][routs[q][b]] = i;
+						remain_weight[p] += weights[routs[p][a]] - weights[routs[q][b]];
+						remain_weight[q] += weights[routs[q][b]] - weights[routs[p][a]];
 						swap(routs[p][a], routs[q][b]);
 						break;
 					}
 					case 1:
 					{
 						move_table[p][routs[p][a]] = i;
+						remain_weight[p] += weights[routs[p][a]];
+						remain_weight[q] -= weights[routs[p][a]];
 						routs[q].emplace(routs[q].begin() + b, routs[p][a]);
 						routs[p].erase(routs[p].begin() + a);
 						break;
@@ -496,6 +500,8 @@ namespace balancedVRP
 					case 2:
 					{
 						move_table[q][routs[q][b]] = i;
+						remain_weight[p] -= weights[routs[q][b]];
+						remain_weight[q] += weights[routs[q][b]];
 						routs[p].emplace(routs[p].begin() + a, routs[q][b]);
 						routs[q].erase(routs[q].begin() + b);
 						break;
@@ -503,12 +509,16 @@ namespace balancedVRP
 					case 3:
 					{
 						move_table[p][routs[p][a]] = i;
+						remain_weight[p] += weights[routs[p][a]];
+						remain_weight[q] -= weights[routs[p][a]];
 						routs[q].push_back(routs[p][a]);
 						routs[p].erase(routs[p].begin() + a);
 						break;
 					}
 					case 4:
 					{
+						remain_weight[p] -= weights[routs[q][b]];
+						remain_weight[q] += weights[routs[q][b]];
 						move_table[q][routs[q][b]] = i;
 						routs[p].push_back(routs[q][b]);
 						routs[q].erase(routs[q].begin() + b);
