@@ -161,19 +161,9 @@ bool check_matrix(const vector<int_matrix>& routs, const size_t size)
 {
     vector<size_t> used(size, 0);
     for (const int_matrix& rout_mat : routs)
-    {
-        //cout << "new type" << endl;
         for (const vector<size_t>& rout : rout_mat)
-        {
-            //cout << "[" ;
             for (const size_t vertex : rout)
-            {
                 ++used[vertex];
-                //cout << vertex << ", ";
-            }
-            //cout << 0 << "]," << endl;
-        }
-    }
     bool is_twice = false;
     bool is_null = false;
     for (size_t i = 1; i < used.size(); ++i)
@@ -216,9 +206,11 @@ void Ant_test()
     dist_mat = utils::fill_matrix_with_end_point(x, y);
 
     Ant_algorithm ant(dist_mat, transports, weights);
-    auto mat_len = ant.run();
-    cout << "lenght: " << mat_len.second << endl;
-    cout << "check: " << check_matrix(mat_len.first, dist_mat.size()) << endl;
+    ant.run();
+    auto mat = ant.res;
+    cout << "lenght: " << ant.length_roust() << endl;
+    cout << "check: " << check_matrix(mat, dist_mat.size()) << endl;
+    print_file(mat);
 }
 
 void sweep_test()
@@ -468,7 +460,7 @@ int main()
     //vector<size_t>& p = t[0];
     //p[0] = 1;
 
-    osman_cluster_test();
+    Ant_test();
     return 0;
 }
 

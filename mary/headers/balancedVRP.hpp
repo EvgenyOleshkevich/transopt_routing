@@ -1008,7 +1008,7 @@ namespace balancedVRP
 			{
 			public:
 				Neighborhood(WidhtNeighborhoodSearch* data) : data(data) {}
-				virtual double check(int_matrix routs) = 0;
+				virtual double check(int_matrix& routs) = 0;
 				WidhtNeighborhoodSearch* const data;
 			};
 
@@ -1016,7 +1016,7 @@ namespace balancedVRP
 			{
 			public:
 				Opt2(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
-				double check(int_matrix routs) override {
+				double check(int_matrix& routs) override {
 					double lenght = 0;
 
 					for (size_t i = 0; i < routs.size(); i++)
@@ -1034,7 +1034,7 @@ namespace balancedVRP
 			{
 			public:
 				VertexShift(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
-				double check(int_matrix routs) override {
+				double check(int_matrix& routs) override {
 					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
@@ -1083,7 +1083,7 @@ namespace balancedVRP
 			{
 			public:
 				EdgeShift(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
-				double check(int_matrix routs) override {
+				double check(int_matrix& routs) override {
 					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
@@ -1135,7 +1135,7 @@ namespace balancedVRP
 			{
 			public:
 				VertexSwap(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
-				double check(int_matrix routs) override {
+				double check(int_matrix& routs) override {
 					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
@@ -1189,7 +1189,7 @@ namespace balancedVRP
 			{
 			public:
 				EdgeSwap(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
-				double check(int_matrix routs) override {
+				double check(int_matrix& routs) override {
 					double lenght = 0;
 
 					for (size_t r = 0; r < routs.size(); r++)
@@ -1246,7 +1246,7 @@ namespace balancedVRP
 			{
 			public:
 				VertexRoutSwap(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
-				double check(int_matrix routs) override {
+				double check(int_matrix& routs) override {
 					for (size_t r1 = 0; r1 < routs.size(); r1++)
 						for (size_t r2 = r1 + 1; r2 < routs.size(); r2++)
 						{
@@ -1292,7 +1292,7 @@ namespace balancedVRP
 								if (to != 0)
 								{
 									data->remain_weight[r1] += data->weights[B] - data->weights[A];
-									data->remain_weight[r2] += data->weights[A] - data->weights[B]; < 0
+									data->remain_weight[r2] += data->weights[A] - data->weights[B];
 									swap(rout1[i], rout2[to]);
 									cur_len = best_len;
 								}
@@ -1308,7 +1308,7 @@ namespace balancedVRP
 			{
 			public:
 				VertexRoutEject(WidhtNeighborhoodSearch* data) : Neighborhood(data) {}
-				double check(int_matrix routs) override {
+				double check(int_matrix& routs) override {
 					for (size_t r1 = 0; r1 < routs.size(); r1++)
 						for (size_t r2 = 0; r2 < routs.size(); r2++)
 						{
@@ -1360,6 +1360,584 @@ namespace balancedVRP
 						}
 
 					return data->lenght_withuot_start();;
+				}
+			};
+		};
+
+		class GlobalWidhtNeighborhoodSearch
+		{
+		public:
+			GlobalWidhtNeighborhoodSearch(const matrix& dist_mat, const vector<double>& weights,
+				const vector<Transport>& transports, int_matrix routs,
+				const vector<size_t>& transport_id,
+				const vector<size_t>& cluster_id, const vector<size_t>& frequence) :
+				res(routs), transport_id(transport_id),
+				cluster_id(cluster_id), frequence(frequence),
+				dist_mat(dist_mat), transports(transports), weights(weights)
+			{}
+
+			void run() {
+				init_remain_weight();
+				double best_len = lenght_withuot_start();
+				auto routs = res;
+
+				std::random_device rd;
+				std::mt19937 mersenne_rand = std::mt19937(rd());
+
+				using ptr = std::unique_ptr<Neighborhood>;
+				vector<ptr> methods;
+				methods.push_back(ptr(new Opt2(this)));
+				methods.push_back(ptr(new VertexShift(this)));
+				methods.push_back(ptr(new EdgeShift(this)));
+				methods.push_back(ptr(new VertexSwap(this)));
+				methods.push_back(ptr(new EdgeSwap(this)));
+				methods.push_back(ptr(new VertexRoutSwap(this)));
+				methods.push_back(ptr(new VertexRoutEject(this)));
+
+				vector<size_t> used(methods.size(), 1);
+				size_t used_count = methods.size();
+
+				unsigned int start_time = clock();
+				while (clock() - start_time < time_limit)
+				{
+					size_t rand_value = mersenne_rand() % used_count;
+					size_t sum_value = 0;
+					size_t meth = 0;
+					for (; meth < methods.size(); ++meth)
+					{
+						sum_value += used[meth];
+						if (sum_value > rand_value)
+							break;
+					}
+
+					double lenght = methods[meth]->check(routs);
+
+					if (best_len > lenght)
+					{
+						best_len = lenght;
+						res = routs;
+						++used[meth];
+						++used_count;
+					}
+				}
+			}
+
+			double lenght()
+			{
+				double lenght = 0;
+				for (size_t i = 0; i < res.size(); ++i)
+					lenght += utils::length_rout_0(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
+				return lenght;
+			}
+
+			double lenght(const int_matrix& routs)
+			{
+				double lenght = 0;
+				for (size_t i = 0; i < routs.size(); ++i)
+					lenght += utils::length_rout_0(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
+				return lenght;
+			}
+
+			int_matrix res;
+			const vector<size_t>& transport_id;
+			const vector<size_t>& cluster_id;
+			const vector<size_t>& frequence;
+		private:
+			const matrix& dist_mat;
+			const vector<Transport>& transports;
+			const vector<double>& weights;
+			const double coef_access = 1.05;
+			const double time_limit = 30000;
+			vector<double> remain_weight;
+
+			void init_remain_weight()
+			{
+				remain_weight = vector<double>(res.size());
+				for (size_t i = 0; i < res.size(); i++)
+				{
+					double weight = 0;
+					for (const size_t vertex : res[i])
+						weight += weights[vertex];
+
+					remain_weight[i] = transports[transport_id[i]].capacity - weight;
+				}
+			}
+
+			double lenght_withuot_start()
+			{
+				double lenght = 0;
+				for (size_t i = 0; i < res.size(); ++i)
+					lenght += utils::length_rout_0(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
+				return lenght;
+			}
+
+			class Neighborhood
+			{
+			public:
+				Neighborhood(GlobalWidhtNeighborhoodSearch* data) : data(data) {}
+				virtual double check(int_matrix& routs) = 0;
+				GlobalWidhtNeighborhoodSearch* const data;
+			};
+
+			class Opt2 : public Neighborhood
+			{
+			public:
+				Opt2(GlobalWidhtNeighborhoodSearch* data) : Neighborhood(data) {}
+				double check(int_matrix& routs) override {
+					double lenght = 0;
+
+					for (size_t i = 0; i < routs.size(); i++)
+						lenght += TSP::local_opt::opt_2_fast2(
+							routs[i],
+							data->dist_mat,
+							data->coef_access)
+						* data->transports[data->transport_id[i]].cost_by_dist;
+
+					return lenght;
+				}
+			};
+
+			class VertexShift : public Neighborhood
+			{
+			public:
+				VertexShift(GlobalWidhtNeighborhoodSearch* data) : Neighborhood(data) {}
+				double check(int_matrix& routs) override {
+					double lenght = 0;
+
+					for (size_t r = 0; r < routs.size(); r++)
+					{
+						vector<size_t>& rout = routs[r];
+
+						double cur_len = utils::length_rout(rout, data->dist_mat);
+						double best_len = cur_len * data->coef_access;
+						// intial and final position are fixed (initial/final node remains 0)
+						for (size_t i = 1; i < rout.size() - 2; i++)
+						{
+							size_t A = rout[i];
+							double len = cur_len
+								- data->dist_mat[rout[i - 1]][A]
+								- data->dist_mat[A][rout[i + 1]];
+							size_t to = i;
+
+							for (size_t j = i + 1; j < rout.size() - 1; j++)
+							{
+								double add_len = data->dist_mat[rout[j]][A]
+									+ data->dist_mat[A][rout[j + 1]];
+
+								if (best_len > len + add_len)
+								{
+									best_len = len + add_len;
+									to = j;
+								}
+							}
+
+							if (to != i)
+							{
+								rout.erase(rout.begin() + i);
+								rout.emplace(rout.begin() + to, A);
+								cur_len = best_len;
+							}
+						}
+						lenght += best_len
+							* data->transports[data->transport_id[r]].cost_by_dist;
+					}
+
+					return lenght;
+				}
+			};
+
+			class EdgeShift : public Neighborhood
+			{
+			public:
+				EdgeShift(GlobalWidhtNeighborhoodSearch* data) : Neighborhood(data) {}
+				double check(int_matrix& routs) override {
+					double lenght = 0;
+
+					for (size_t r = 0; r < routs.size(); r++)
+					{
+						vector<size_t>& rout = routs[r];
+
+						double cur_len = utils::length_rout(rout, data->dist_mat);
+						double best_len = cur_len * data->coef_access;
+						// intial and final position are fixed (initial/final node remains 0)
+						for (size_t i = 1; i < rout.size() - 3; i++)
+						{
+							size_t A1 = rout[i];
+							size_t A2 = rout[i + 1];
+							double len = cur_len
+								- data->dist_mat[rout[i - 1]][A1]
+								- data->dist_mat[A2][rout[i + 2]];
+							size_t to = i;
+
+							for (size_t j = i + 2; j < rout.size() - 1; j++)
+							{
+								double add_len = data->dist_mat[rout[j]][A1]
+									+ data->dist_mat[A2][rout[j + 1]];
+
+								if (best_len > len + add_len)
+								{
+									best_len = len + add_len;
+									to = j;
+								}
+							}
+
+							if (to != i)
+							{
+								rout.erase(rout.begin() + i);
+								rout.erase(rout.begin() + i);
+								rout.emplace(rout.begin() + to - 1, A2);
+								rout.emplace(rout.begin() + to - 1, A1);
+								cur_len = best_len;
+							}
+						}
+						lenght += best_len
+							* data->transports[data->transport_id[r]].cost_by_dist;
+					}
+
+					return lenght;
+				}
+			};
+
+			class VertexSwap : public Neighborhood
+			{
+			public:
+				VertexSwap(GlobalWidhtNeighborhoodSearch* data) : Neighborhood(data) {}
+				double check(int_matrix& routs) override {
+					double lenght = 0;
+
+					for (size_t r = 0; r < routs.size(); r++)
+					{
+						vector<size_t>& rout = routs[r];
+
+						double cur_len = utils::length_rout(rout, data->dist_mat);
+						double best_len = cur_len * data->coef_access;
+						// intial and final position are fixed (initial/final node remains 0)
+						for (size_t i = 1; i < rout.size() - 2; i++)
+						{
+							size_t A = rout[i];
+							double len = cur_len
+								- data->dist_mat[rout[i - 1]][A]
+								- data->dist_mat[A][rout[i + 1]];
+							size_t to = i;
+
+							for (size_t j = i + 2; j < rout.size() - 1; j++)
+							{
+
+								size_t B = rout[j];
+								double add_len = data->dist_mat[rout[j - 1]][A]
+									+ data->dist_mat[A][rout[j + 1]]
+									- data->dist_mat[rout[j - 1]][B]
+									- data->dist_mat[B][rout[j + 1]]
+									+ data->dist_mat[rout[i - 1]][B]
+									+ data->dist_mat[B][rout[i + 1]];
+
+								if (best_len > len + add_len)
+								{
+									best_len = len + add_len;
+									to = j;
+								}
+							}
+
+							if (to != i)
+							{
+								swap(rout[i], rout[to]);
+								cur_len = best_len;
+							}
+						}
+						lenght += best_len
+							* data->transports[data->transport_id[r]].cost_by_dist;
+					}
+
+					return lenght;
+				}
+			};
+
+			class EdgeSwap : public Neighborhood
+			{
+			public:
+				EdgeSwap(GlobalWidhtNeighborhoodSearch* data) : Neighborhood(data) {}
+				double check(int_matrix& routs) override {
+					double lenght = 0;
+
+					for (size_t r = 0; r < routs.size(); r++)
+					{
+						vector<size_t>& rout = routs[r];
+
+						double cur_len = utils::length_rout(rout, data->dist_mat);
+						double best_len = cur_len * data->coef_access;
+						// intial and final position are fixed (initial/final node remains 0)
+						for (size_t i = 1; i < rout.size() - 3; i++)
+						{
+							size_t A1 = rout[i];
+							size_t A2 = rout[i + 1];
+							double len = cur_len
+								- data->dist_mat[rout[i - 1]][A1]
+								- data->dist_mat[A2][rout[i + 2]];
+							size_t to = i;
+
+							for (size_t j = i + 3; j < rout.size() - 2; j++)
+							{
+
+								size_t B1 = rout[j];
+								size_t B2 = rout[j + 1];
+								double add_len = data->dist_mat[rout[j - 1]][A1]
+									+ data->dist_mat[A2][rout[j + 1]]
+									- data->dist_mat[rout[j - 1]][B1]
+									- data->dist_mat[B2][rout[j + 1]]
+									+ data->dist_mat[rout[i - 1]][B1]
+									+ data->dist_mat[B2][rout[i + 1]];
+
+								if (best_len > len + add_len)
+								{
+									best_len = len + add_len;
+									to = j;
+								}
+							}
+
+							if (to != i)
+							{
+								swap(rout[i], rout[to]);
+								swap(rout[i + 1], rout[to + 1]);
+								cur_len = best_len;
+							}
+						}
+						lenght += best_len
+							* data->transports[data->transport_id[r]].cost_by_dist;
+					}
+
+					return lenght;
+				}
+			};
+
+			class VertexRoutSwap : public Neighborhood
+			{
+			public:
+				VertexRoutSwap(GlobalWidhtNeighborhoodSearch* data) : Neighborhood(data) {}
+				double check(int_matrix& routs) override {
+					for (size_t r1 = 0; r1 < routs.size(); r1++)
+						for (size_t r2 = r1 + 1; r2 < routs.size(); r2++)
+						{
+							if (data->cluster_id[r1] != data->cluster_id[r2])
+							{
+								check_different_clust(routs, r1, r2);
+								continue;
+							}
+							vector<size_t>& rout1 = routs[r1];
+							vector<size_t>& rout2 = routs[r2];
+							double cost1 = data->transports[data->transport_id[r1]].cost_by_dist;
+							double cost2 = data->transports[data->transport_id[r2]].cost_by_dist;
+							double cur_len = utils::length_rout(rout1, data->dist_mat)
+								* cost1
+								+ utils::length_rout(rout2, data->dist_mat)
+								* cost2;
+							double best_len = cur_len * data->coef_access;
+							// intial and final position are fixed (initial/final node remains 0)
+							for (size_t i = 1; i < rout1.size() - 1; i++)
+							{
+								size_t A = rout1[i];
+								double len = cur_len
+									- (data->dist_mat[rout1[i - 1]][A]
+										+ data->dist_mat[A][rout1[i + 1]]) * cost1;
+								size_t to = 0;
+								size_t B = 0;
+
+								for (size_t j = 1; j < rout2.size() - 1; j++)
+								{
+									B = rout2[j];
+									if (data->remain_weight[r1] - data->weights[A] + data->weights[B] < 0
+										|| data->remain_weight[r2] + data->weights[A] - data->weights[B] < 0)
+										continue;
+									double add_len = (data->dist_mat[rout2[j - 1]][A]
+										+ data->dist_mat[A][rout2[j + 1]]) * cost2
+										- (data->dist_mat[rout2[j - 1]][B]
+											+ data->dist_mat[B][rout2[j + 1]]) * cost2
+										+ (data->dist_mat[rout1[i - 1]][B]
+											+ data->dist_mat[B][rout1[i + 1]]) * cost1;
+
+									if (best_len > len + add_len)
+									{
+										best_len = len + add_len;
+										to = j;
+									}
+								}
+
+								if (to != 0)
+								{
+									data->remain_weight[r1] += data->weights[B] - data->weights[A];
+									data->remain_weight[r2] += data->weights[A] - data->weights[B];
+										swap(rout1[i], rout2[to]);
+									cur_len = best_len;
+								}
+							}
+
+						}
+
+					return data->lenght_withuot_start();;
+				}
+
+				double check_different_clust(int_matrix& routs, const size_t r1, const size_t r2)
+				{
+					vector<size_t>& rout1 = routs[r1];
+					vector<size_t>& rout2 = routs[r2];
+					double cost1 = data->transports[data->transport_id[r1]].cost_by_dist;
+					double cost2 = data->transports[data->transport_id[r2]].cost_by_dist;
+					double cur_len = utils::length_rout(rout1, data->dist_mat)
+						* cost1
+						+ utils::length_rout(rout2, data->dist_mat)
+						* cost2;
+					double best_len = cur_len * data->coef_access;
+					// intial and final position are fixed (initial/final node remains 0)
+					for (size_t i = 1; i < rout1.size() - 1; i++)
+					{
+						size_t A = rout1[i];
+						if (data->frequence[A] != 1)
+							continue;
+						double len = cur_len
+							- (data->dist_mat[rout1[i - 1]][A]
+								+ data->dist_mat[A][rout1[i + 1]]) * cost1;
+						size_t to = 0;
+						size_t B = 0;
+
+						for (size_t j = 1; j < rout2.size() - 1; j++)
+						{
+							B = rout2[j];
+							if (data->frequence[B] != 1
+								|| data->remain_weight[r1] - data->weights[A] + data->weights[B] < 0
+								|| data->remain_weight[r2] + data->weights[A] - data->weights[B] < 0)
+								continue;
+							double add_len = (data->dist_mat[rout2[j - 1]][A]
+								+ data->dist_mat[A][rout2[j + 1]]) * cost2
+								- (data->dist_mat[rout2[j - 1]][B]
+									+ data->dist_mat[B][rout2[j + 1]]) * cost2
+								+ (data->dist_mat[rout1[i - 1]][B]
+									+ data->dist_mat[B][rout1[i + 1]]) * cost1;
+
+							if (best_len > len + add_len)
+							{
+								best_len = len + add_len;
+								to = j;
+							}
+						}
+
+						if (to != 0)
+						{
+							data->remain_weight[r1] += data->weights[B] - data->weights[A];
+							data->remain_weight[r2] += data->weights[A] - data->weights[B];
+							swap(rout1[i], rout2[to]);
+							cur_len = best_len;
+						}
+					}
+				}
+			};
+
+			class VertexRoutEject : public Neighborhood
+			{
+			public:
+				VertexRoutEject(GlobalWidhtNeighborhoodSearch* data) : Neighborhood(data) {}
+				double check(int_matrix& routs) override {
+					for (size_t r1 = 0; r1 < routs.size(); r1++)
+						for (size_t r2 = 0; r2 < routs.size(); r2++)
+						{
+							if (r1 == r2)
+								continue;
+							if (data->cluster_id[r1] != data->cluster_id[r2])
+							{
+								check_different_clust(routs, r1, r2);
+								continue;
+							}
+							vector<size_t>& rout1 = routs[r1];
+							vector<size_t>& rout2 = routs[r2];
+							double cost1 = data->transports[data->transport_id[r1]].cost_by_dist;
+							double cost2 = data->transports[data->transport_id[r2]].cost_by_dist;
+							double cur_len = utils::length_rout(rout1, data->dist_mat)
+								* cost1
+								+ utils::length_rout(rout2, data->dist_mat)
+								* cost2;
+							double best_len = cur_len * data->coef_access;
+							// intial and final position are fixed (initial/final node remains 0)
+							for (size_t i = 1; i < rout1.size() - 1; i++)
+							{
+								size_t A = rout1[i];
+								if (data->remain_weight[r2] < data->weights[A]);
+								continue;
+								double len = cur_len
+									- (data->dist_mat[rout1[i - 1]][A]
+										+ data->dist_mat[A][rout1[i + 1]]) * cost1;
+								size_t to = 0;
+
+								for (size_t j = 1; j < rout2.size(); j++)
+								{
+
+									double add_len = (data->dist_mat[rout2[j - 1]][A]
+										+ data->dist_mat[A][rout2[j]]) * cost2;
+
+									if (best_len > len + add_len)
+									{
+										best_len = len + add_len;
+										to = j;
+									}
+								}
+
+								if (to != 0)
+								{
+									data->remain_weight[r1] -= data->weights[A];
+									data->remain_weight[r2] += data->weights[A];
+									rout1.erase(rout1.begin() + i);
+									rout2.emplace(rout1.begin() + to, A);
+									cur_len = best_len;
+								}
+							}
+
+						}
+
+					return data->lenght_withuot_start();;
+				}
+
+				double check_different_clust(int_matrix& routs, const size_t r1, const size_t r2)
+				{
+					vector<size_t>& rout1 = routs[r1];
+					vector<size_t>& rout2 = routs[r2];
+					double cost1 = data->transports[data->transport_id[r1]].cost_by_dist;
+					double cost2 = data->transports[data->transport_id[r2]].cost_by_dist;
+					double cur_len = utils::length_rout(rout1, data->dist_mat)
+						* cost1
+						+ utils::length_rout(rout2, data->dist_mat)
+						* cost2;
+					double best_len = cur_len * data->coef_access;
+					// intial and final position are fixed (initial/final node remains 0)
+					for (size_t i = 1; i < rout1.size() - 1; i++)
+					{
+						size_t A = rout1[i];
+						if (data->frequence[A] != 1
+							|| data->remain_weight[r2] < data->weights[A])
+							continue;
+						double len = cur_len
+							- (data->dist_mat[rout1[i - 1]][A]
+								+ data->dist_mat[A][rout1[i + 1]]) * cost1;
+						size_t to = 0;
+
+						for (size_t j = 1; j < rout2.size(); j++)
+						{
+
+							double add_len = (data->dist_mat[rout2[j - 1]][A]
+								+ data->dist_mat[A][rout2[j]]) * cost2;
+
+							if (best_len > len + add_len)
+							{
+								best_len = len + add_len;
+								to = j;
+							}
+						}
+
+						if (to != 0)
+						{
+							data->remain_weight[r1] -= data->weights[A];
+							data->remain_weight[r2] += data->weights[A];
+							rout1.erase(rout1.begin() + i);
+							rout2.emplace(rout1.begin() + to, A);
+							cur_len = best_len;
+						}
+					}
 				}
 			};
 		};
