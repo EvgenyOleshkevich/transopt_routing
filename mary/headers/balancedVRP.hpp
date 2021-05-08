@@ -533,6 +533,9 @@ namespace balancedVRP
 						best_lenght = len;
 						res = routs;
 					}
+					for (double t : remain_weight)
+						if (t < 0)
+							int u = 0;
 					recalculate_BSTM_RECM(routs, p, q, checker);
 				}
 			}
@@ -645,8 +648,8 @@ namespace balancedVRP
 					for (size_t i = 0; i < rout1.size(); ++i)
 						for (size_t j = 0; j < rout2.size(); ++j)
 						{
-							if (osman->remain_weight[p] - osman->weights[rout1[i]] + osman->weights[rout2[j]] < 0
-								|| osman->remain_weight[q] + osman->weights[rout1[i]] - osman->weights[rout2[j]] < 0)
+							if (osman->remain_weight[p] + osman->weights[rout1[i]] - osman->weights[rout2[j]] < 0
+								|| osman->remain_weight[q] - osman->weights[rout1[i]] + osman->weights[rout2[j]] < 0)
 								continue;
 							swap(rout1[i], rout2[j]);
 							double lenght = utils::length_rout(rout1, osman->dist_mat);
