@@ -531,7 +531,7 @@ namespace balancedVRP
 			{
 				double lenght = 0;
 				for (size_t i = 0; i < res.size(); ++i)
-					lenght += utils::length_rout_0(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
+					lenght += utils::length_rout(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
 				return lenght;
 			}
 
@@ -539,7 +539,7 @@ namespace balancedVRP
 			{
 				double lenght = 0;
 				for (size_t i = 0; i < routs.size(); ++i)
-					lenght += utils::length_rout_0(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
+					lenght += utils::length_rout(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
 				return lenght;
 			}
 
@@ -653,22 +653,21 @@ namespace balancedVRP
 					if (rout1.size() > 1)
 					{
 						for (size_t i = 0; i < rout1.size(); ++i)
-							for (size_t j = 0; j < rout2.size(); ++j)
-							{
-								if (osman->remain_weight[q] - osman->weights[rout1[i]] < 0)
-									continue;
-								rout2.emplace(rout2.begin() + j, rout1[i]);
-								rout1.erase(rout1.begin() + i);
-								double lenght = utils::length_rout(rout1, osman->dist_mat);
-								lenght += utils::length_rout(rout2, osman->dist_mat);
-								if (best_lenght > lenght)
+							if (osman->remain_weight[q] - osman->weights[rout1[i]] >= 0)
+								for (size_t j = 0; j < rout2.size(); ++j)
 								{
-									best_lenght = lenght;
-									decision = { {i,j}, 1 };
+									rout2.emplace(rout2.begin() + j, rout1[i]);
+									rout1.erase(rout1.begin() + i);
+									double lenght = utils::length_rout(rout1, osman->dist_mat);
+									lenght += utils::length_rout(rout2, osman->dist_mat);
+									if (best_lenght > lenght)
+									{
+										best_lenght = lenght;
+										decision = { {i,j}, 1 };
+									}
+									rout1.emplace(rout1.begin() + i, rout2[j]);
+									rout2.erase(rout2.begin() + j);
 								}
-								rout1.emplace(rout1.begin() + i, rout2[j]);
-								rout2.erase(rout2.begin() + j);
-							}
 
 						// вставка в конец
 						for (size_t i = 0; i < rout1.size(); ++i)
@@ -693,22 +692,22 @@ namespace balancedVRP
 					if (rout2.size() > 1)
 					{
 						for (size_t i = 0; i < rout2.size(); ++i)
-							for (size_t j = 0; j < rout1.size(); ++j)
-							{
-								if (osman->remain_weight[p] - osman->weights[rout1[j]] < 0)
-									continue;
-								rout1.emplace(rout1.begin() + j, rout2[i]);
-								rout2.erase(rout2.begin() + i);
-								double lenght = utils::length_rout(rout1, osman->dist_mat);
-								lenght += utils::length_rout(rout2, osman->dist_mat);
-								if (best_lenght > lenght)
+							if (osman->remain_weight[p] - osman->weights[rout2[i]] >= 0)
+								for (size_t j = 0; j < rout1.size(); ++j)
 								{
-									best_lenght = lenght;
-									decision = { {j,i}, 2 };
+
+									rout1.emplace(rout1.begin() + j, rout2[i]);
+									rout2.erase(rout2.begin() + i);
+									double lenght = utils::length_rout(rout1, osman->dist_mat);
+									lenght += utils::length_rout(rout2, osman->dist_mat);
+									if (best_lenght > lenght)
+									{
+										best_lenght = lenght;
+										decision = { {j,i}, 2 };
+									}
+									rout2.emplace(rout2.begin() + i, rout1[j]);
+									rout1.erase(rout1.begin() + j);
 								}
-								rout2.emplace(rout2.begin() + i, rout1[j]);
-								rout1.erase(rout1.begin() + j);
-							}
 
 						// вставка в конец
 						for (size_t i = 0; i < rout2.size(); ++i)
@@ -732,7 +731,7 @@ namespace balancedVRP
 					osman->BSTM[p][q] = (size_t)(best_lenght - base_lenght);
 					osman->BSTM[q][p] = 0;
 					osman->RECM[p][q] = decision;
-					osman->RECM[q][p] = { {0, 0}, 6 };
+					osman->RECM[q][p] = { {0, 0}, 5 };
 				}
 			};
 
@@ -857,14 +856,14 @@ namespace balancedVRP
 				BSTM[p][q] = (size_t)(best_lenght - base_lenght);
 				BSTM[q][p] = 0;
 				RECM[p][q] = decision;
-				RECM[q][p] = { {0, 0}, 6 };
+				RECM[q][p] = { {0, 0}, 5 };
 			}
 
 			void fill_BSTM_RECM(const vector<vector<size_t>>& routs, const std::unique_ptr<checker_change>& checker)
 			{
 				BSTM = vector<vector<size_t>>(count_rout, vector < size_t>(count_rout, 0));
 				RECM = vector<vector<pair<pair<size_t, size_t>, size_t>>>(count_rout,
-					vector<pair<pair<size_t, size_t>, size_t>>(count_rout, { {0,0}, 6 }));
+					vector<pair<pair<size_t, size_t>, size_t>>(count_rout, { {0,0}, 5 }));
 				for (size_t p = 0; p < count_rout; ++p)
 					for (size_t q = p + 1; q < count_rout; ++q)
 						checker->check_change(routs, p, q);
