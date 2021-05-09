@@ -1,7 +1,7 @@
 #include "headers/algorithms.hpp"
 #include <fstream>
 #include <thread>
-#include <boost/thread>
+#include <boost/thread.hpp>
 #include <windows.h>
 
 using namespace std;
@@ -447,32 +447,69 @@ void osman_cluster_test()
 
 }
 
+
 void greedy_parallel_test()
 {
-    auto start_time = clock();
-    std::ofstream out("res_clust.txt");
-    out.close();
     read_file();
     read_transports();
     dist_mat = utils::fill_matrix(x, y);
+    auto start_time = clock();
+    std::ofstream out("res_clust.txt");
+    out.close();
+
     auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
 
     auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
     auto weight_inner_cluster = balancedVRP::clustering::get_weight_inner_cluster(weights, clusters);
 
-    vector<std::shared_ptr<thread>> threads(clusters.size());
-    for (size_t i = 0; i < clusters.size(); i++)
-    {
-        auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+    vector<std::shared_ptr<boost::thread>> threads;
+    vector< project::GreadyBase> greedies;
 
-        project::GreadyBase greedy(
-            dist_inner_cluster[i],
-            sort_matrix,
-            weight_inner_cluster[i],
-            transports);
-        greedy.run();
-        threads.push_back(std::make_shared<boost::thread>(&project::GreadyBase::run, greedy));
-    }
+    project::GreadyBase k0(
+        dist_inner_cluster[0],
+        utils::fill_sort_matrix(dist_inner_cluster[0]),
+        weight_inner_cluster[0],
+        transports);
+    project::GreadyBase k1(
+        dist_inner_cluster[1],
+        utils::fill_sort_matrix(dist_inner_cluster[1]),
+        weight_inner_cluster[1],
+        transports);
+    project::GreadyBase k2(
+        dist_inner_cluster[2],
+        utils::fill_sort_matrix(dist_inner_cluster[2]),
+        weight_inner_cluster[2],
+        transports);
+    project::GreadyBase k3(
+        dist_inner_cluster[3],
+        utils::fill_sort_matrix(dist_inner_cluster[3]),
+        weight_inner_cluster[3],
+        transports);
+    project::GreadyBase k4(
+        dist_inner_cluster[4],
+        utils::fill_sort_matrix(dist_inner_cluster[4]),
+        weight_inner_cluster[4],
+        transports);
+    project::GreadyBase k5(
+        dist_inner_cluster[5],
+        utils::fill_sort_matrix(dist_inner_cluster[5]),
+        weight_inner_cluster[5],
+        transports);
+    project::GreadyBase k6(
+        dist_inner_cluster[6],
+        utils::fill_sort_matrix(dist_inner_cluster[6]),
+        weight_inner_cluster[6],
+        transports);
+
+
+    threads.push_back(std::make_shared<boost::thread>(&project::GreadyBase::run, &k0));
+    threads.push_back(std::make_shared<boost::thread>(&project::GreadyBase::run, &k1));
+    threads.push_back(std::make_shared<boost::thread>(&project::GreadyBase::run, &k2));
+    threads.push_back(std::make_shared<boost::thread>(&project::GreadyBase::run, &k3));
+    threads.push_back(std::make_shared<boost::thread>(&project::GreadyBase::run, &k4));
+    threads.push_back(std::make_shared<boost::thread>(&project::GreadyBase::run, &k5));
+    threads.push_back(std::make_shared<boost::thread>(&project::GreadyBase::run, &k6));
+
     for (auto t : threads) {
         t->join();
     }
@@ -588,15 +625,9 @@ void local_search_cluster_test()
     global_local_search_cluster_test(vec_routs, vec_trans, clusters);
 }
 
+
 int main()
 {
-    //int_matrix t(2, vector<size_t>(2, 0));
-
-    //vector<size_t>& p = t[0];
-    //p[0] = 1; lenght: 15850.1
-
-    // greedy_cluster_test();
     greedy_parallel_test();
     return 0;
 }
-
