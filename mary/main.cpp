@@ -69,6 +69,7 @@ void read_file()
     in.close();
 }
 
+namespace print {
 void print(const vector<int_matrix>& routs)
 {
     for (const int_matrix& rout_mat : routs)
@@ -158,181 +159,154 @@ void print_file(const int_matrix& routs, const int_matrix& clusters, const size_
     out.close();
 }
 
-bool check_matrix(const vector<int_matrix>& routs, const size_t size)
+
+void print_file(const vector<int_matrix>& routs, const char* name)
 {
-    vector<size_t> used(size, 0);
+    std::ofstream out(name);
     for (const int_matrix& rout_mat : routs)
         for (const vector<size_t>& rout : rout_mat)
+        {
+            for (const size_t vertex : rout)
+                out << vertex << " ";
+            out << ";";
+        }
+    out.close();
+}
+
+void print_file(const int_matrix& routs, const char* name)
+{
+    std::ofstream out(name);
+    for (const vector<size_t>& rout : routs)
+    {
+        for (const size_t vertex : rout)
+            out << vertex << " ";
+        out << ";";
+    }
+    out.close();
+}
+
+void print_file(const vector<int_matrix>& routs, const int_matrix& clusters,
+    const size_t clust_id, const char* name)
+{
+    std::ofstream out(name, std::ios::app);
+    for (const int_matrix& rout_mat : routs)
+        for (const vector<size_t>& rout : rout_mat)
+        {
+            for (const size_t vertex : rout)
+                out << clusters[clust_id][vertex] << " ";
+            out << ";";
+        }
+    out << ":";
+    out.close();
+}
+
+void print_file(const int_matrix& routs, const int_matrix& clusters,
+    const size_t clust_id, const char* name)
+{
+    std::ofstream out(name, std::ios::app);
+    for (const vector<size_t>& rout : routs)
+    {
+        for (const size_t vertex : rout)
+            out << clusters[clust_id][vertex] << " ";
+        out << ";";
+    }
+    out << ":";
+    out.close();
+}
+}
+
+namespace checkers {
+    bool check_matrix(const vector<int_matrix>& routs, const size_t size)
+    {
+        vector<size_t> used(size, 0);
+        for (const int_matrix& rout_mat : routs)
+            for (const vector<size_t>& rout : rout_mat)
+                for (const size_t vertex : rout)
+                    ++used[vertex];
+        bool is_twice = false;
+        bool is_null = false;
+        for (size_t i = 1; i < used.size(); ++i)
+        {
+            if (used[i] > 1)
+                is_twice = true;
+            if (used[i] == 0)
+                is_null = true;
+        }
+        //cout << "check is_twice: " << is_twice << endl;
+        //cout << "check is_null: " << is_null << endl;
+        return !is_twice && !is_null;
+    }
+
+    bool check_matrix(const int_matrix& routs, const size_t size)
+    {
+        vector<size_t> used(size, 0);
+
+        for (const vector<size_t>& rout : routs)
             for (const size_t vertex : rout)
                 ++used[vertex];
-    bool is_twice = false;
-    bool is_null = false;
-    for (size_t i = 1; i < used.size(); ++i)
-    {
-        if (used[i] > 1)
-            is_twice = true;
-        if (used[i] == 0)
-            is_null = true;
-    }
-    //cout << "check is_twice: " << is_twice << endl;
-    //cout << "check is_null: " << is_null << endl;
-    return !is_twice && !is_null;
-}
-
-bool check_matrix(const int_matrix& routs, const size_t size)
-{
-    vector<size_t> used(size, 0);
-
-    for (const vector<size_t>& rout : routs)
-        for (const size_t vertex : rout)
-            ++used[vertex];
-    bool is_twice = false;
-    bool is_null = false;
-    for (size_t i = 1; i < used.size(); ++i)
-    {
-        if (used[i] > 1)
-            is_twice = true;
-        if (used[i] == 0)
-            is_null = true;
-    }
-    cout << "check is_twice: " << is_twice << endl;
-    cout << "check is_null: " << is_null << endl;
-    return !is_twice && !is_null;
-}
-
-bool check_transport(const int_matrix& routs, const vector<size_t>& transports_id)
-{
-    bool is_ok = true;
-
-    for (size_t i = 0; i < routs.size(); ++i)
-    {
-        double w = 0;
-        for (const size_t vertex : routs[i])
-            w += weights[vertex];
-        is_ok &= transports[transports_id[i]].capacity >= w;
-    }
-
-    return is_ok;
-}
-
-bool check_transport(const int_matrix& routs, const vector<size_t>& transports_id, const vector<double>& W)
-{
-    bool is_ok = true;
-
-    for (size_t i = 0; i < routs.size(); ++i)
-    {
-        double w = 0;
-        for (const size_t vertex : routs[i])
-            w += W[vertex];
-        if (transports[transports_id[i]].capacity < w)
+        bool is_twice = false;
+        bool is_null = false;
+        for (size_t i = 1; i < used.size(); ++i)
         {
+            if (used[i] > 1)
+                is_twice = true;
+            if (used[i] == 0)
+                is_null = true;
+        }
+        //cout << "check is_twice: " << is_twice << endl;
+        //cout << "check is_null: " << is_null << endl;
+        return !is_twice && !is_null;
+    }
+
+    bool check_transport(const int_matrix& routs, const vector<size_t>& transports_id)
+    {
+        bool is_ok = true;
+
+        for (size_t i = 0; i < routs.size(); ++i)
+        {
+            double w = 0;
+            for (const size_t vertex : routs[i])
+                w += weights[vertex];
             is_ok &= transports[transports_id[i]].capacity >= w;
         }
 
+        return is_ok;
     }
 
-    return is_ok;
-}
+    bool check_transport(const int_matrix& routs, const vector<size_t>& transports_id, const vector<double>& W)
+    {
+        bool is_ok = true;
 
-void Ant_test()
-{
-    read_file();
-    read_transports();
-    dist_mat = utils::fill_matrix_with_end_point(x, y);
-
-    Ant_algorithm ant(dist_mat, transports, weights);
-    ant.run();
-    auto mat = ant.res;
-    cout << "lenght: " << ant.length_roust() << endl;
-    cout << "check: " << check_matrix(mat, dist_mat.size()) << endl;
-    print_file(mat);
-}
-
-void sweep_test()
-{
-    read_file();
-    read_transports();
-    dist_mat = utils::fill_matrix_with_end_point(x, y);
-
-    project::Sweeping sweep(dist_mat, x, y, weights, transports);
-    sweep.run();
-    cout << "lenght: " << sweep.lenght() << endl;
-    print(sweep.res);
-    cout << "check: " << check_matrix(sweep.res, dist_mat.size()) << endl;
-}
-
-void greedy_test()
-{
-    read_file();
-    read_transports();
-    auto P = utils::fill_matrix_and_sort(x, y);
-    dist_mat = P.first;
-
-    project::GreadyBase greedy(dist_mat, P.second, weights, transports);
-    greedy.run();
-    cout << "lenght: " << greedy.lenght() << endl;
-    print_file(greedy.res);
-    cout << "check: " << check_matrix(greedy.res, dist_mat.size()) << endl;
-}
-
-void greedy_2opt_test()
-{
-    read_file();
-    read_transports();
-    auto P = utils::fill_matrix_and_sort(x, y);
-    dist_mat = P.first;
-
-    project::GreadyBase greedy(dist_mat, P.second, weights, transports);
-    greedy.run();
-    for (int_matrix& rout_mat : greedy.res)
-        for (vector<size_t>& rout : rout_mat)
+        for (size_t i = 0; i < routs.size(); ++i)
         {
-            TSP::local_opt::opt_2_fast2(rout, dist_mat);
-            //TSP::local_opt::opt_3(rout, dist_mat);
+            double w = 0;
+            for (const size_t vertex : routs[i])
+                w += W[vertex];
+            if (transports[transports_id[i]].capacity < w)
+            {
+                is_ok &= transports[transports_id[i]].capacity >= w;
+            }
+
         }
-    cout << "lenght: " << greedy.lenght() << endl;
-    print(greedy.res);
-    cout << "check: " << check_matrix(greedy.res, dist_mat.size()) << endl;
-}
 
-void clurk_test()
-{
-    read_file();
-    read_transports();
-    auto P = utils::fill_matrix_and_sort(x, y);
-    dist_mat = P.first;
+        return is_ok;
+    }
 
-    project::ClarkRight clurk(dist_mat, weights, transports);
-    clurk.run();
+    bool check_transport(const int_matrix& routs, const Transport& trans, const vector<double>& W)
+    {
+        bool is_ok = true;
 
-    cout << "lenght: " << clurk.lenght() << endl;
-    print(clurk.res);
-    cout << "check: " << check_matrix(clurk.res, dist_mat.size()) << endl;
-}
+        for (size_t i = 0; i < routs.size(); ++i)
+        {
+            double w = 0;
+            for (const size_t vertex : routs[i])
+                w += W[vertex];
+            if (trans.capacity < w)
+                is_ok &= trans.capacity >= w;
+        }
 
-void osman_test()
-{
-    read_file();
-    read_transports();
-    auto P = utils::fill_matrix_and_sort(x, y);
-    dist_mat = P.first;
-
-    project::GreadyBase greedy(dist_mat, P.second, weights, transports);
-    greedy.run();
-    cout << "lenght greedy: " << greedy.lenght() << endl;
-    cout << "check: " << check_matrix(greedy.res, dist_mat.size()) << endl;
-
-    auto data = project::Osman::transform_data(greedy.res);
-
-    project::Osman osman(dist_mat, weights, transports, data.first,
-        data.second, data.first.size());
-
-    osman.run();
-    osman.add_zero_vertex();
-
-    print(osman.res);
-    cout << "lenght osman: " << osman.lenght() << endl;
-    cout << "check: " << check_matrix(osman.res, dist_mat.size()) << endl;
+        return is_ok;
+    }
 }
 
 void save_cluster()
@@ -361,92 +335,6 @@ void save_cluster()
     //    acc_weight : 1225.62
     //    5441.18
 }
-
-void greedy_cluster_test()
-{
-    std::ofstream out("res_clust.txt");
-    out.close();
-    read_file();
-    read_transports();
-    dist_mat = utils::fill_matrix(x, y);
-    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
-    
-    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
-    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
-
-
-    double lenght = 0;
-    vector<size_t> checks;
-    for (size_t i = 0; i < clusters.size(); i++)
-    {
-        auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
-
-        project::GreadyBase greedy(
-            dist_inner_cluster[i],
-            sort_matrix,
-            weight_inner_cluster[i],
-            transports);
-        greedy.run();
-        lenght += greedy.lenght();
-        print_file(greedy.res, clusters, i);
-        checks.push_back(check_matrix(greedy.res, dist_inner_cluster[i].size()));
-    }
-
-    cout << "lenght: " << lenght << endl;
-    for (size_t check : checks)
-        cout << "check: " << check << endl;
-    
-}
-
-void osman_cluster_test()
-{
-    std::ofstream out("res_clust.txt");
-    out.close();
-    read_file();
-    read_transports();
-    dist_mat = utils::fill_matrix(x, y);
-    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
-
-    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
-    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
-
-
-    double lenght = 0;
-    vector<size_t> checks;
-    for (size_t i = 0; i < clusters.size(); i++)
-    {
-        auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
-
-        project::GreadyBase greedy(
-            dist_inner_cluster[i],
-            sort_matrix,
-            weight_inner_cluster[i],
-            transports);
-        greedy.run();
-
-        auto data = project::Osman::transform_data(greedy.res);
-
-        project::Osman osman(dist_inner_cluster[i],
-            weight_inner_cluster[i],
-            transports, data.first,
-            data.second, data.first.size());
-
-        osman.run();
-        osman.add_zero_vertex();
-
-        lenght += osman.lenght();
-
-
-        print_file(osman.res, clusters, i);
-        checks.push_back(check_matrix(osman.res, dist_inner_cluster[i].size()));
-    }
-
-    cout << "lenght: " << lenght << endl;
-    for (size_t check : checks)
-        cout << "check: " << check << endl;
-
-}
-
 
 void greedy_parallel_test()
 {
@@ -517,6 +405,231 @@ void greedy_parallel_test()
     cout << "time: " << clock() - start_time;
 }
 
+void clurk_test()
+{
+    const char* name = "tests/clurk_res.txt";
+    std::ofstream out(name);
+    out.close();
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+
+    unsigned int start_time = clock();
+    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+
+    double length = 0;
+    vector<size_t> checks;
+    vector<project::ClarkRight> reults;
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        project::ClarkRight clurk(dist_inner_cluster[i], weight_inner_cluster[i], transports);
+        clurk.run();
+        reults.push_back(clurk);
+    }
+
+    cout << "# clurk" << endl;
+    cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+
+        length += reults[i].length();
+        print::print_file(reults[i].res, clusters, i, name);
+        checks.push_back(checkers::check_matrix(reults[i].res, dist_inner_cluster[i].size()));
+        for (size_t j = 0; j < reults[i].res.size(); j++)
+            checks.push_back(checkers::check_transport(reults[i].res[j], transports[j], weight_inner_cluster[i]));
+    }
+
+    cout << "# length: " << length << endl;
+    for (size_t check : checks)
+        cout << "check: " << check << endl;
+}
+
+void sweep_test()
+{
+    const char* name = "tests/sweeping_res.txt";
+    std::ofstream out(name);
+    out.close();
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+
+    unsigned int start_time = clock();
+    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+    auto x_coord = clustering::get_weight_inner_cluster(x, clusters);
+    auto y_coord = clustering::get_weight_inner_cluster(y, clusters);
+
+
+    double length = 0;
+    vector<size_t> checks;
+    vector<project::Sweeping> reults;
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        project::Sweeping sweep(dist_inner_cluster[i], x_coord[i], y_coord[i], weight_inner_cluster[i], transports);
+        sweep.run();
+        reults.push_back(sweep);
+    }
+
+    cout << "# sweeping" << endl;
+    cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+
+        length += reults[i].length();
+        print::print_file(reults[i].res, clusters, i, name);
+        checks.push_back(checkers::check_matrix(reults[i].res, dist_inner_cluster[i].size()));
+        for (size_t j = 0; j < reults[i].res.size(); j++)
+            checks.push_back(checkers::check_transport(reults[i].res[j], transports[j], weight_inner_cluster[i]));
+    }
+
+    cout << "# length: " << length << endl;
+    for (size_t check : checks)
+        cout << "check: " << check << endl;
+}
+
+void greedy_test()
+{
+    const char* name = "tests/greedy_res.txt";
+    std::ofstream out(name);
+    out.close();
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+
+    unsigned int start_time = clock();
+    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+    
+    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+
+    double length = 0;
+    vector<size_t> checks;
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+
+        project::GreadyBase greedy(
+            dist_inner_cluster[i],
+            sort_matrix,
+            weight_inner_cluster[i],
+            transports);
+        greedy.run();
+        length += greedy.length();
+        print::print_file(greedy.res, clusters, i, name);
+        checks.push_back(checkers::check_matrix(greedy.res, dist_inner_cluster[i].size()));
+    }
+
+    cout << "# greedy" << endl;
+    cout << "# time: " << clock() - start_time << " millisec "<< endl;
+    cout << "# length: " << length << endl;
+    for (size_t check : checks)
+        cout << "check: " << check << endl;
+    
+}
+
+void ant_test()
+{
+    const char* name = "tests/ant_res.txt";
+    std::ofstream out(name);
+    out.close();
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+
+    unsigned int start_time = clock();
+    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+
+    double length = 0;
+    vector<size_t> checks;
+    vector<Ant_algorithm> reults;
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        Ant_algorithm ant(dist_inner_cluster[i], weight_inner_cluster[i], transports);
+        ant.run();
+        reults.push_back(ant);
+    }
+
+    cout << "# ant" << endl;
+    cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        length += reults[i].length();
+        print::print_file(reults[i].res, clusters, i, name);
+        checks.push_back(checkers::check_matrix(reults[i].res, dist_inner_cluster[i].size()));
+        for (size_t j = 0; j < reults[i].res.size(); j++)
+            checks.push_back(checkers::check_transport(reults[i].res[j], transports[j], weight_inner_cluster[i]));
+    }
+
+    cout << "# length: " << length << endl;
+    for (size_t check : checks)
+        cout << "check: " << check << endl;
+}
+
+void osman_test()
+{
+    const char* name = "tests/osman_res.txt";
+    std::ofstream out(name);
+    out.close();
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+
+    unsigned int start_time = clock();
+    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+    double length = 0;
+    vector<size_t> checks;
+    vector<project::Osman> reults;
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        Ant_algorithm ant(dist_inner_cluster[i], weight_inner_cluster[i], transports);
+        ant.run();
+
+        auto data = project::Osman::transform_data(ant.res);
+
+        project::Osman osman(dist_inner_cluster[i],
+            weight_inner_cluster[i],
+            transports, data.first,
+            data.second, data.first.size());
+
+        osman.run();
+        osman.add_zero_vertex();
+        reults.push_back(osman);
+    }
+
+    cout << "# osman" << endl;
+    cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        length += reults[i].length();
+        print::print_file(reults[i].res, clusters, i, name);
+        checks.push_back(checkers::check_matrix(reults[i].res, dist_inner_cluster[i].size()));
+        checks.push_back(checkers::check_transport(reults[i].res, reults[i].transport_id, weight_inner_cluster[i]));
+    }
+
+    cout << "# length: " << length << endl;
+    for (size_t check : checks)
+        cout << "check: " << check << endl;
+}
+
 void global_local_search_cluster_test(const vector<int_matrix>& vec_routs,
     const vector<vector<size_t>>& vec_trans, const int_matrix& clusters)
 {
@@ -541,13 +654,13 @@ void global_local_search_cluster_test(const vector<int_matrix>& vec_routs,
         transports, routs, trans_id, clust_id, frequence);
 
     local.run();
-    cout << "lenght: " << local.lenght() << endl;
-    cout << "check: " << check_transport(local.res, trans_id) << endl;
+    cout << "length: " << local.length() << endl;
+    cout << "check: " << checkers::check_transport(local.res, trans_id) << endl;
 
-    print_file(local.res);
+    print::print_file(local.res);
 }
 
-void local_search_cluster_test()
+void local_search_cluster_test_old()
 {
     std::ofstream out("res_clust.txt");
     out.close();
@@ -577,12 +690,12 @@ void local_search_cluster_test()
             weight_inner_cluster[i],
             transports);
         greedy.run();
-        double len = greedy.lenght();
-        cout << "greedy lenght: " << len << endl;
+        double len = greedy.length();
+        cout << "greedy length: " << len << endl;
         sum_gready += len;
 
         auto data = project::Osman::transform_data(greedy.res);
-        cout << "check transport greedy: " << check_transport(data.first, data.second, weight_inner_cluster[i]) << endl;
+        cout << "check transport greedy: " << checkers::check_transport(data.first, data.second, weight_inner_cluster[i]) << endl;
 
 
         project::Osman osman(dist_inner_cluster[i],
@@ -591,10 +704,10 @@ void local_search_cluster_test()
             data.second, data.first.size());
         osman.run();
         osman.add_zero_vertex();
-        len = osman.lenght();
-        cout << "osman lenght: " << len << endl;
+        len = osman.length();
+        cout << "osman length: " << len << endl;
         sum_osman += len;
-        cout << "check transport osman: " << check_transport(osman.res, osman.transport_id, weight_inner_cluster[i]) << endl;
+        cout << "check transport osman: " << checkers::check_transport(osman.res, osman.transport_id, weight_inner_cluster[i]) << endl;
 
         project::WidhtNeighborhoodSearch local(dist_inner_cluster[i],
             weight_inner_cluster[i],
@@ -602,32 +715,107 @@ void local_search_cluster_test()
             osman.transport_id);
 
         local.run();
-        len = local.lenght();
-        cout << "local lenght: " << len << endl;
+        len = local.length();
+        cout << "local length: " << len << endl;
      
 
         sum_local += len;
-        print_file(local.res, clusters, i);
-        cout << "check transport local: " << check_transport(local.res, local.transport_id, weight_inner_cluster[i]) << endl;
+        print::print_file(local.res, clusters, i);
+        cout << "check transport local: " << checkers::check_transport(local.res, local.transport_id, weight_inner_cluster[i]) << endl;
 
-        checks.push_back(check_matrix(local.res, dist_inner_cluster[i].size()));
+        checks.push_back(checkers::check_matrix(local.res, dist_inner_cluster[i].size()));
 
         vec_routs.push_back(local.res);
         vec_trans.push_back(local.transport_id);
     }
 
-    cout << "sum_gready lenght: " << sum_gready << endl;
-    cout << "sum_osman lenght: " << sum_osman << endl;
-    cout << "sum_local lenght: " << sum_local << endl;
+    cout << "sum_gready length: " << sum_gready << endl;
+    cout << "sum_osman length: " << sum_osman << endl;
+    cout << "sum_local length: " << sum_local << endl;
     for (size_t check : checks)
         cout << "check: " << check << endl;
 
     global_local_search_cluster_test(vec_routs, vec_trans, clusters);
 }
 
+void final_test()
+{
+    const char* name = "tests/final_res.txt";
+    std::ofstream out(name);
+    out.close();
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+
+    unsigned int start_time = clock();
+    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+    double length = 0;
+    vector<size_t> checks;
+
+    vector<int_matrix> vec_routs;
+    vector<vector<size_t>> vec_trans;
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        Ant_algorithm ant(dist_inner_cluster[i], weight_inner_cluster[i], transports);
+        ant.run();
+
+        auto data = project::Osman::transform_data(ant.res);
+
+        project::Osman osman(dist_inner_cluster[i],
+            weight_inner_cluster[i],
+            transports, data.first,
+            data.second, data.first.size());
+
+        osman.run();
+        osman.add_zero_vertex();
+
+        project::WidhtNeighborhoodSearch local(dist_inner_cluster[i],
+            weight_inner_cluster[i],
+            transports, osman.res,
+            osman.transport_id);
+
+        local.run();
+
+        vec_routs.push_back(local.res);
+        vec_trans.push_back(local.transport_id);
+    }
+
+    int_matrix routs;
+    vector<size_t> trans_id;
+    vector<size_t> clust_id;
+
+    for (size_t i = 0; i < clusters.size(); i++)
+        for (size_t t = 0; t < vec_routs[i].size(); t++)
+        {
+            const vector<size_t>& rout_i = vec_routs[i][t];
+            vector<size_t> rout(rout_i.size());
+            trans_id.push_back(vec_trans[i][t]);
+            clust_id.push_back(i);
+
+            for (size_t v = 0; v < rout_i.size(); v++)
+                rout[v] = clusters[i][rout_i[v]];
+            routs.push_back(rout);
+        }
+
+    project::GlobalWidhtNeighborhoodSearch local(dist_mat, weights,
+        transports, routs, trans_id, clust_id, frequence);
+
+    local.run();
+
+    cout << "# final" << endl;
+    cout << "# time: " << clock() - start_time << " millisec " << endl;
+    cout << "# length: " << local.length() << endl;
+    cout << "check: " << checkers::check_transport(local.res, trans_id) << endl;
+
+    print::print_file(local.res, name);
+}
 
 int main()
 {
-    greedy_parallel_test();
+    final_test();
     return 0;
 }

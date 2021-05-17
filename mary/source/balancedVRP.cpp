@@ -531,9 +531,9 @@ namespace balancedVRP
 	pair<int_matrix, matrix> VND_STS::dynamic_decode(const vec_int_float& vertexes)
 	{
 		vector < size_t> init_rout = { vertexes[0].first };
-		double lenght = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
-		vector<pair<double, int>> F = { {lenght , -1} }; // F(0);
-		// lenght of routs, index for restore routs
+		double length = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
+		vector<pair<double, int>> F = { {length , -1} }; // F(0);
+		// length of routs, index for restore routs
 
 		for (size_t i = 1; i < vertexes.size(); ++i)
 		{
@@ -546,13 +546,13 @@ namespace balancedVRP
 				weight += vertexes[j].second;
 				if (weight > capacity)
 					break;
-				lenght = utils::length_rout_fict(rout, dist_mat, fict_vertex);
+				length = utils::length_rout_fict(rout, dist_mat, fict_vertex);
 				if (j > 0)
-					lenght += F[j - 1].first;
+					length += F[j - 1].first;
 
-				if (F[i].first > lenght)
+				if (F[i].first > length)
 				{
-					F[i].first = lenght;
+					F[i].first = length;
 					F[i].second = j - 1;
 				}
 			}
@@ -616,9 +616,9 @@ namespace balancedVRP
 	double VND_STS::dynamic_decode_fast(const vec_int_float& vertexes)
 	{
 		vector < size_t> init_rout = { vertexes[0].first };
-		double lenght = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
-		vector<pair<double, int>> F = { {lenght , -1} }; // F(0);
-		// lenght of routs, index for restore routs
+		double length = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
+		vector<pair<double, int>> F = { {length , -1} }; // F(0);
+		// length of routs, index for restore routs
 
 		for (size_t i = 1; i < vertexes.size(); ++i)
 		{
@@ -631,13 +631,13 @@ namespace balancedVRP
 				weight += vertexes[j].second;
 				if (weight > capacity)
 					break;
-				lenght = utils::length_rout_fict(rout, dist_mat, fict_vertex);
+				length = utils::length_rout_fict(rout, dist_mat, fict_vertex);
 				if (j > 0)
-					lenght += F[j - 1].first;
+					length += F[j - 1].first;
 
-				if (F[i].first > lenght)
+				if (F[i].first > length)
 				{
-					F[i].first = lenght;
+					F[i].first = length;
 					F[i].second = j - 1;
 				}
 			}
@@ -648,7 +648,7 @@ namespace balancedVRP
 
 	double VND_STS::greedy_decode_fast(const vec_int_float& vertexes)
 	{
-		double lenght = 0;
+		double length = 0;
 		vector<size_t> rout;
 		double w = 0;
 		for (size_t i = 0; i < vertexes.size(); ++i)
@@ -660,20 +660,20 @@ namespace balancedVRP
 			{
 				w -= vertexes[i].second + capacity;
 				--i;
-				lenght += utils::length_rout_fict(rout, dist_mat, fict_vertex);
+				length += utils::length_rout_fict(rout, dist_mat, fict_vertex);
 				rout = vector<size_t>();
 			}
 		}
-		lenght += utils::length_rout_fict(rout, dist_mat, fict_vertex);
-		return lenght;
+		length += utils::length_rout_fict(rout, dist_mat, fict_vertex);
+		return length;
 	}
 
 	void VND_STS::dynamic_decode_add_fict(vec_int_float& vertexes)
 	{
 		vector < size_t> init_rout = { vertexes[0].first };
-		double lenght = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
-		vector<pair<double, int>> F = { {lenght , -1} }; // F(0);
-		// lenght of routs, index for restore routs
+		double length = utils::length_rout_fict(init_rout, dist_mat, fict_vertex);
+		vector<pair<double, int>> F = { {length , -1} }; // F(0);
+		// length of routs, index for restore routs
 
 		for (size_t i = 1; i < vertexes.size(); ++i)
 		{
@@ -686,13 +686,13 @@ namespace balancedVRP
 				weight += vertexes[j].second;
 				if (weight > capacity)
 					break;
-				lenght = utils::length_rout_fict(rout, dist_mat, fict_vertex);
+				length = utils::length_rout_fict(rout, dist_mat, fict_vertex);
 				if (j > 0)
-					lenght += F[j - 1].first;
+					length += F[j - 1].first;
 
-				if (F[i].first > lenght)
+				if (F[i].first > length)
 				{
-					F[i].first = lenght;
+					F[i].first = length;
 					F[i].second = j - 1;
 				}
 			}
@@ -719,31 +719,31 @@ namespace balancedVRP
 	double VND_STS::VND(vec_int_float& vertexes)
 	{
 		vec_int_float best_vertexes = vertexes;
-		double best_lenght = dynamic_decode_fast(vertexes);
+		double best_length = dynamic_decode_fast(vertexes);
 		while (true)
 		{
 			TSP::local_opt_for_VND_STS::TSP_2_opt(vertexes, dist_mat);
-			double lenght = dynamic_decode_fast(vertexes);
+			double length = dynamic_decode_fast(vertexes);
 			bool is_break = true;
-			if (best_lenght > lenght)
+			if (best_length > length)
 			{
-				best_lenght = lenght;
+				best_length = length;
 				best_vertexes = vertexes;
 				is_break = false;
 			}
 			TSP::local_opt_for_VND_STS::swap(vertexes, dist_mat);
-			lenght = dynamic_decode_fast(vertexes);
-			if (best_lenght > lenght)
+			length = dynamic_decode_fast(vertexes);
+			if (best_length > length)
 			{
-				best_lenght = lenght;
+				best_length = length;
 				best_vertexes = vertexes;
 				is_break = false;
 			}
 			TSP::local_opt_for_VND_STS::shift(vertexes, dist_mat);
-			lenght = dynamic_decode_fast(vertexes);
-			if (best_lenght > lenght)
+			length = dynamic_decode_fast(vertexes);
+			if (best_length > length)
 			{
-				best_lenght = lenght;
+				best_length = length;
 				best_vertexes = vertexes;
 				is_break = false;
 			}
@@ -754,13 +754,13 @@ namespace balancedVRP
 		}
 
 		vertexes = best_vertexes;
-		return best_lenght;
+		return best_length;
 	}
 	
 	double VND_STS::STS(vec_int_float& vertexes)
 	{
 		vec_int_float best_vertexes = vertexes;
-		double best_lenght = greedy_decode_fast(vertexes);
+		double best_length = greedy_decode_fast(vertexes);
 
 		for (size_t i = 0; i < 30; ++i)
 		{
@@ -777,10 +777,10 @@ namespace balancedVRP
 			case 0:
 			{
 				TSP::local_opt_for_VND_STS::TSP_2_opt(vertexes, dist_mat);
-				double lenght = greedy_decode_fast(vertexes);
-				if (best_lenght > lenght)
+				double length = greedy_decode_fast(vertexes);
+				if (best_length > length)
 				{
-					best_lenght = lenght;
+					best_length = length;
 					best_vertexes = vertexes;
 				}
 				break;
@@ -788,10 +788,10 @@ namespace balancedVRP
 			case 1:
 			{
 				std::swap(vertexes[a], vertexes[b]);
-				double lenght = greedy_decode_fast(vertexes);
-				if (best_lenght > lenght)
+				double length = greedy_decode_fast(vertexes);
+				if (best_length > length)
 				{
-					best_lenght = lenght;
+					best_length = length;
 					best_vertexes = vertexes;
 				}
 				break;
@@ -800,10 +800,10 @@ namespace balancedVRP
 			{
 				for (size_t j = a; j < b - 1; ++j)
 					std::swap(vertexes[j], vertexes[j + 1]);
-				double lenght = greedy_decode_fast(vertexes);
-				if (best_lenght > lenght)
+				double length = greedy_decode_fast(vertexes);
+				if (best_length > length)
 				{
-					best_lenght = lenght;
+					best_length = length;
 					best_vertexes = vertexes;
 				}
 				break;
@@ -811,10 +811,10 @@ namespace balancedVRP
 			case 3:
 			{
 				TSP::local_opt_for_VND_STS::exchange(vertexes, a, b);
-				double lenght = greedy_decode_fast(vertexes);
-				if (best_lenght > lenght)
+				double length = greedy_decode_fast(vertexes);
+				if (best_length > length)
 				{
-					best_lenght = lenght;
+					best_length = length;
 					best_vertexes = vertexes;
 				}
 				break;
@@ -824,27 +824,27 @@ namespace balancedVRP
 			}
 		}
 		vertexes = best_vertexes;
-		return best_lenght;
+		return best_length;
 	}
 
 	pair<int_matrix, matrix> VND_STS::calculate(vec_int_float& vertexes)
 	{
 		vec_int_float best_vertexes = vertexes;
-		double best_lenght = dynamic_decode_fast(vertexes);
+		double best_length = dynamic_decode_fast(vertexes);
 
 		for (size_t i = 0; i < 10; ++i)
 		{
-			double lenght = VND(vertexes);
-			if (best_lenght > lenght)
+			double length = VND(vertexes);
+			if (best_length > length)
 			{
-				best_lenght = lenght;
+				best_length = length;
 				best_vertexes = vertexes;
 			}
 			//dynamic_decode_add_fict(vertexes);
-			lenght = STS(vertexes);
-			if (best_lenght > lenght)
+			length = STS(vertexes);
+			if (best_length > length)
 			{
-				best_lenght = lenght;
+				best_length = length;
 				best_vertexes = vertexes;
 			}
 
@@ -869,7 +869,7 @@ namespace balancedVRP
 #pragma endregion
 
 #pragma region Ant
-	Ant_algorithm::Ant_algorithm(const matrix& dist_mat, const vector<Transport>& transports, const vector<double>& weights) :
+	Ant_algorithm::Ant_algorithm(const matrix& dist_mat, const vector<double>& weights, const vector<Transport>& transports) :
 		dist_mat(dist_mat), transports(transports), weights(weights) 
 	{
 		std::random_device rd;

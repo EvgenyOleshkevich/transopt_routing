@@ -1,5 +1,44 @@
 #ifdef DEBUG_TEST_07_05_2021
 
+void Ant_test_old()
+{
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix_with_end_point(x, y);
+
+    Ant_algorithm ant(dist_mat, weights, transports);
+    ant.run();
+    auto mat = ant.res;
+    cout << "length: " << ant.length() << endl;
+    cout << "check: " << checkers::check_matrix(mat, dist_mat.size()) << endl;
+    print::print_file(mat);
+}
+
+void osman_test_old()
+{
+    read_file();
+    read_transports();
+    auto P = utils::fill_matrix_and_sort(x, y);
+    dist_mat = P.first;
+
+    project::GreadyBase greedy(dist_mat, P.second, weights, transports);
+    greedy.run();
+    cout << "length greedy: " << greedy.length() << endl;
+    cout << "check: " << checkers::check_matrix(greedy.res, dist_mat.size()) << endl;
+
+    auto data = project::Osman::transform_data(greedy.res);
+
+    project::Osman osman(dist_mat, weights, transports, data.first,
+        data.second, data.first.size());
+
+    osman.run();
+    osman.add_zero_vertex();
+
+    print::print(osman.res);
+    cout << "length osman: " << osman.length() << endl;
+    cout << "check: " << checkers::check_matrix(osman.res, dist_mat.size()) << endl;
+}
+
 void cluster_test1()
 {
     dist_mat = utils::fill_matrix_with_end_point(x, y);
@@ -140,7 +179,7 @@ void c2()
 
     auto routs = a.calculate(t).first;
 
-    cout << "dynamic: lenght= " << utils::length_routs(routs, dist_mat) << endl;
+    cout << "dynamic: length= " << utils::length_routs(routs, dist_mat) << endl;
     for (const vector<size_t>& rout : routs)
     {
         double w = 0;
@@ -201,7 +240,7 @@ void test1()
     auto clusters = balancedVRP::clustering::dichotomous_division(dist, 4);
     auto dist_matrixes = balancedVRP::clustering::get_dist_inner_cluster(dist, clusters);
     auto weights_by_clust = balancedVRP::clustering::get_weight_inner_cluster(weights, clusters);
-    double lenght = 0;
+    double length = 0;
     for (size_t i = 0; i < dist_matrixes.size(); ++i) {
 
 
@@ -231,32 +270,32 @@ void test1()
 
         //auto routs = algorithms::clark_right::clark_right(dist_matrixes[i], dist_matrixes[i].size(), 60);
         // auto osman = new Osman(dist_matrixes[i], dist_matrixes[i].size(), 60);
-        lenght += utils::length_routs(routs, dist_matrixes[i]);
+        length += utils::length_routs(routs, dist_matrixes[i]);
     }
-    cout << "lenght: " << lenght << endl;
+    cout << "length: " << length << endl;
 }
 
 void opt_2_test()
 {
     /*
-        lenght: 79203.3
+        length: 79203.3
         check: 1
 
         opt_2_symmetrical time: 1915
         opt_2_symmetrical check: 1
-        lenght: 10144.1
+        length: 10144.1
 
         opt_2_fast2 time: 2266
         opt_2_fast2 check: 1
-        lenght: 10144.1
+        length: 10144.1
 
         opt_2 time: 64725
         opt_2 check: 1
-        lenght: 11501.9
+        length: 11501.9
 
         opt_2_fast time: 23676
         opt_2_fast check: 1
-        lenght: 11501.9
+        length: 11501.9
     */
     x.clear();
     y.clear();
@@ -284,7 +323,7 @@ void opt_2_test()
     auto clusters = balancedVRP::clustering::dichotomous_division(dist, 4);
     auto dist_matrixes = balancedVRP::clustering::get_dist_inner_cluster(dist, clusters);
     auto weights_by_clust = balancedVRP::clustering::get_weight_inner_cluster(weights, clusters);
-    double lenght = 0;
+    double length = 0;
 
 
     vector<size_t> rout(clusters[0].size() + 2);
@@ -293,7 +332,7 @@ void opt_2_test()
     rout[rout.size() - 1] = 0;
     for (size_t i = 1; i < rout.size() - 1; ++i)
         rout[i] = i;
-    cout << "lenght: " << utils::length_rout(rout, dist_matrixes[0]) << endl;
+    cout << "length: " << utils::length_rout(rout, dist_matrixes[0]) << endl;
     cout << "check: " << check(rout) << endl;
 
     // opt_2_symmetrical
@@ -306,7 +345,7 @@ void opt_2_test()
         unsigned int search_time = end_time - start_time; // искомое время
         cout << "opt_2_symmetrical time: " << search_time << endl;
         cout << "opt_2_symmetrical check: " << check(rout_test) << endl;
-        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
+        cout << "length: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
     }
 
     // opt_2_fast2
@@ -319,7 +358,7 @@ void opt_2_test()
         unsigned int search_time = end_time - start_time; // искомое время
         cout << "opt_2_fast2 time: " << search_time << endl;
         cout << "opt_2_fast2 check: " << check(rout_test) << endl;
-        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
+        cout << "length: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
     }
 
     // opt_2
@@ -331,7 +370,7 @@ void opt_2_test()
         unsigned int search_time = end_time - start_time; // искомое время
         cout << "opt_2 time: " << search_time << endl;
         cout << "opt_2 check: " << check(rout_test) << endl;
-        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
+        cout << "length: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
     }
 
     // opt_2_fast
@@ -343,7 +382,7 @@ void opt_2_test()
         unsigned int search_time = end_time - start_time; // искомое время
         cout << "opt_2_fast time: " << search_time << endl;
         cout << "opt_2_fast check: " << check(rout_test) << endl;
-        cout << "lenght: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
+        cout << "length: " << utils::length_rout(rout_test, dist_matrixes[0]) << endl;
     }
 
 
@@ -354,11 +393,11 @@ void opt_2_test2()
     /*
             opt_2_best_parallel time: 21216 -> 7693
         opt_2_best_parallel check: 1
-        lenght: 1.11833e+06
+        length: 1.11833e+06
 
         opt_2_best time: 35940 -> 14946
         opt_2_best check: 1
-        lenght: 1.11536e+06
+        length: 1.11536e+06
     */
     x.clear();
     y.clear();
@@ -384,7 +423,7 @@ void opt_2_test2()
     auto dist = utils::fill_matrix_with_end_point(x, y);
 
 
-    double lenght = 0;
+    double length = 0;
 
 
     vector<size_t> rout(dist.size() + 1);
@@ -393,7 +432,7 @@ void opt_2_test2()
     rout[rout.size() - 1] = 0;
     for (size_t i = 1; i < rout.size() - 1; ++i)
         rout[i] = i;
-    cout << "lenght: " << utils::length_rout(rout, dist) << endl;
+    cout << "length: " << utils::length_rout(rout, dist) << endl;
     cout << "check: " << check(rout) << endl;
 
     // opt_2_symmetrical
@@ -406,7 +445,7 @@ void opt_2_test2()
     //    unsigned int search_time = end_time - start_time; // искомое время
     //    cout << endl << "opt_2_symmetrical time: " << search_time << endl;
     //    cout << "opt_2_symmetrical check: " << check(rout_test) << endl;
-    //    cout << "lenght: " << utils::length_rout(rout_test, dist) << endl;
+    //    cout << "length: " << utils::length_rout(rout_test, dist) << endl;
     //}
 
         // opt_2_best
@@ -419,7 +458,7 @@ void opt_2_test2()
         unsigned int search_time = end_time - start_time; // искомое время
         cout << endl << "opt_2_best_parallel time: " << search_time << endl;
         cout << "opt_2_best_parallel check: " << check(rout_test) << endl;
-        cout << "lenght: " << utils::length_rout(rout_test, dist) << endl;
+        cout << "length: " << utils::length_rout(rout_test, dist) << endl;
     }
 
     // opt_2_best
@@ -431,7 +470,7 @@ void opt_2_test2()
         unsigned int search_time = end_time - start_time; // искомое время
         cout << endl << "opt_2_best time: " << search_time << endl;
         cout << "opt_2_best check: " << check(rout_test) << endl;
-        cout << "lenght: " << utils::length_rout(rout_test, dist) << endl;
+        cout << "length: " << utils::length_rout(rout_test, dist) << endl;
     }
 
 
@@ -466,7 +505,7 @@ int old_main()
         TSP::local_opt::opt_3(TSP_opt_rout[i], dist_mat);
     }
 
-    cout << "dichotomous_division: lenght= " << utils::length_routs(TSP_opt_rout, dist_mat) << endl;
+    cout << "dichotomous_division: length= " << utils::length_routs(TSP_opt_rout, dist_mat) << endl;
     for (const vector<size_t>& rout : TSP_opt_rout)
     {
         cout << "[" << 0 << ", ";
@@ -483,7 +522,7 @@ int old_main()
     for (auto vertex : rout)
         cout << vertex << ", ";
     cout << 0 << "]," << endl;
-    std::cout << "Lin_Kernighan: lenght= " <<
+    std::cout << "Lin_Kernighan: length= " <<
         utils::length_rout(rout, dist_mat) << std::endl;
 
     auto cutting_routs = balancedVRP::cutting_rout(rout, dist_mat, 6);
@@ -495,7 +534,7 @@ int old_main()
             cout << vertex << ", ";
         cout << 0 << "]," << endl;
     }
-    cout << "cutting_rout: lenght= " << utils::length_routs(cutting_routs, dist_mat) << endl;
+    cout << "cutting_rout: length= " << utils::length_routs(cutting_routs, dist_mat) << endl;
 
     balancedVRP::clustering::radian_sort(x, y, 51);
     //auto routs_dichotomous_division = balancedVRP::clustering::dichotomous_division(dist_mat, 5);
@@ -510,7 +549,7 @@ int old_main()
         TSP::local_opt::TSP_3_opt(TSP_opt_rout[i], dist_mat);
     }
 
-    cout << "dichotomous_division: lenght= " << utils::length_routs(TSP_opt_rout, dist_mat) << endl;
+    cout << "dichotomous_division: length= " << utils::length_routs(TSP_opt_rout, dist_mat) << endl;
     for (const vector<size_t>& rout : TSP_opt_rout)
     {
         cout << "[" << 0 << ", ";
@@ -520,7 +559,7 @@ int old_main()
     }
 
     auto routs_genetic_alg = genetic::genetic_alg();
-    cout << "genetic_alg: lenght= " << length_routs(routs_genetic_alg) << endl;
+    cout << "genetic_alg: length= " << length_routs(routs_genetic_alg) << endl;
     for (const vector<size_t>& rout : routs_genetic_alg)
     {
         cout << "[" << 0 << ", ";
@@ -530,7 +569,7 @@ int old_main()
     }
 
     auto routs_clark_right = algorithms::clark_right::clark_right(dist_mat, count_point, 5);
-    cout << "clark_right: lenght= " << utils::length_routs(routs_clark_right, dist_mat) <<endl;
+    cout << "clark_right: length= " << utils::length_routs(routs_clark_right, dist_mat) <<endl;
     for (const vector<size_t>& rout : routs_clark_right)
     {
         cout << "[" << 0 << ", ";
@@ -540,7 +579,7 @@ int old_main()
     }
     algorithms::Osman osman(dist_mat, count_point, 5);
     auto routs_osman = osman.start(routs_clark_right, 1);
-    cout << "osman: lenght= " << utils::length_routs(routs_osman, dist_mat) << endl;
+    cout << "osman: length= " << utils::length_routs(routs_osman, dist_mat) << endl;
     for (const vector<size_t>& rout : routs_osman)
     {
         cout << "[" << 0 << ", ";
@@ -558,7 +597,7 @@ int old_main()
         TSP::local_opt::TSP_3_opt(TSP_opt_rout[i], dist_mat);
     }
 
-    cout << "TSP_opt_rout: lenght= " << utils::length_routs(TSP_opt_rout, dist_mat) << endl;
+    cout << "TSP_opt_rout: length= " << utils::length_routs(TSP_opt_rout, dist_mat) << endl;
     for (const vector<size_t>& rout : TSP_opt_rout)
     {
         cout << "[" << 0 << ", ";

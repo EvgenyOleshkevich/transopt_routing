@@ -172,12 +172,12 @@ namespace TSP
                         ++index;
                     }
 
-                    double lenght = dist_mat[0][rout[0]] + dist_mat[rout.back()][0];
+                    double length = dist_mat[0][rout[0]] + dist_mat[rout.back()][0];
                     for (size_t k = 1; k < rout.size(); ++k)
-                        lenght += dist_mat[rout[k - 1]][rout[k]];
-                    if (best_len > lenght)
+                        length += dist_mat[rout[k - 1]][rout[k]];
+                    if (best_len > length)
                     {
-                        best_len = lenght;
+                        best_len = length;
                         best_rout = rout;
                     }
                 }

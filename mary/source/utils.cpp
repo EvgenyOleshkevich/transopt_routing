@@ -97,53 +97,55 @@ namespace utils
 
     double length_rout(const vector<size_t>& rout, const matrix& dist_mat)
     {
-        double lenght = dist_mat[0][rout[0]] + dist_mat[rout.back()][0];
+        if (rout.empty())
+            return 0;
+        double length = dist_mat[0][rout[0]] + dist_mat[rout.back()][0];
         for (size_t i = 1; i < rout.size(); ++i)
-            lenght += dist_mat[rout[i - 1]][rout[i]];
-        return lenght;
+            length += dist_mat[rout[i - 1]][rout[i]];
+        return length;
     }
 
     double length_rout_0(const vector<size_t>& rout, const matrix& dist_mat)
     {
-        double lenght = 0;
+        double length = 0;
         for (size_t i = 1; i < rout.size(); ++i)
-            lenght += dist_mat[rout[i - 1]][rout[i]];
-        return lenght;
+            length += dist_mat[rout[i - 1]][rout[i]];
+        return length;
     }
 
     double length_rout(const vec_int_float& rout, const matrix& dist_mat)
     {
-        double lenght = dist_mat[0][rout[0].first] + dist_mat[rout.back().first][0];
+        double length = dist_mat[0][rout[0].first] + dist_mat[rout.back().first][0];
         for (size_t i = 1; i < rout.size(); ++i)
-            lenght += dist_mat[rout[i - 1].first][rout[i].first];
-        return lenght;
+            length += dist_mat[rout[i - 1].first][rout[i].first];
+        return length;
     }
 
     double length_rout(const vector<size_t>& rout, const matrix& dist_mat,
         const size_t beg, const size_t end)
     {
-        double lenght = 0;
+        double length = 0;
         for (size_t i = beg; i < end; ++i)
-            lenght += dist_mat[rout[i]][rout[i + 1]];
-        return lenght;
+            length += dist_mat[rout[i]][rout[i + 1]];
+        return length;
     }
 
     double length_rout_before(const vector<size_t>& rout,
         const matrix& dist_mat, const size_t end)
     {
-        double lenght = dist_mat[0][rout[0]];
+        double length = dist_mat[0][rout[0]];
         for (size_t i = 0; i < end; ++i)
-            lenght += dist_mat[rout[i]][rout[i + 1]];
-        return lenght;
+            length += dist_mat[rout[i]][rout[i + 1]];
+        return length;
     }
 
     double length_rout_after(const vector<size_t>& rout,
         const matrix& dist_mat, const size_t beg)
     {
-        double lenght = dist_mat[rout.back()][0];
+        double length = dist_mat[rout.back()][0];
         for (size_t i = beg + 1; i < rout.size(); ++i)
-            lenght += dist_mat[rout[i - 1]][rout[i]];
-        return lenght;
+            length += dist_mat[rout[i - 1]][rout[i]];
+        return length;
     }
 
     double length_rout_fict(const vec_int_float& rout_fict,
@@ -172,9 +174,9 @@ namespace utils
 
     double length_routs(const int_matrix& routs, const matrix& dist_mat)
     {
-        double lenght = 0;
+        double length = 0;
         for (const vector<size_t>& rout : routs)
-            lenght += length_rout(rout, dist_mat);
-        return lenght;
+            length += length_rout(rout, dist_mat);
+        return length;
     }
 }

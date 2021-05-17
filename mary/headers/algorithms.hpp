@@ -112,7 +112,7 @@ namespace algorithms
         {
             auto checker = get_checker(checker_type);
             auto best_routs = routs;
-            auto best_lenght = utils::length_routs(routs, dist_mat);
+            auto best_length = utils::length_routs(routs, dist_mat);
             move_table = get_move_table();
             
             size_t max_iter = (size_t)(340 + 0.000353 * 5 * utils::sqr((double)count_point * need_routs));
@@ -169,9 +169,9 @@ namespace algorithms
                     break;
                 }
                 auto len = utils::length_routs(routs, dist_mat);
-                if (best_lenght > len)
+                if (best_length > len)
                 {
-                    best_lenght = len;
+                    best_length = len;
                     best_routs = routs;
                 }
                 recalculate_BSTM_RECM(routs, p, q, checker);
@@ -204,10 +204,10 @@ namespace algorithms
             {
                 if (p > q)
                     swap(p, q);
-                double base_lenght = utils::length_rout(routs[p], osman->dist_mat);
-                base_lenght += utils::length_rout(routs[q], osman->dist_mat);
+                double base_length = utils::length_rout(routs[p], osman->dist_mat);
+                base_length += utils::length_rout(routs[q], osman->dist_mat);
 
-                double best_lenght = base_lenght * 1.2;
+                double best_length = base_length * 1.2;
 
                 auto rout1 = routs[p];
                 auto rout2 = routs[q];
@@ -218,11 +218,11 @@ namespace algorithms
                     for (size_t j = 0; j < rout2.size(); ++j)
                     {
                         swap(rout1[i], rout2[j]);
-                        double lenght = utils::length_rout(rout1, osman->dist_mat);
-                        lenght += utils::length_rout(rout2, osman->dist_mat);
-                        if (best_lenght > lenght)
+                        double length = utils::length_rout(rout1, osman->dist_mat);
+                        length += utils::length_rout(rout2, osman->dist_mat);
+                        if (best_length > length)
                         {
-                            best_lenght = lenght;
+                            best_length = length;
                             decision = { {i,j}, 0 };
                         }
                         swap(rout1[i], rout2[j]);
@@ -236,11 +236,11 @@ namespace algorithms
                         {
                             rout2.emplace(rout2.begin() + j, rout1[i]);
                             rout1.erase(rout1.begin() + i);
-                            double lenght = utils::length_rout(rout1, osman->dist_mat);
-                            lenght += utils::length_rout(rout2, osman->dist_mat);
-                            if (best_lenght > lenght)
+                            double length = utils::length_rout(rout1, osman->dist_mat);
+                            length += utils::length_rout(rout2, osman->dist_mat);
+                            if (best_length > length)
                             {
-                                best_lenght = lenght;
+                                best_length = length;
                                 decision = { {i,j}, 1 };
                             }
                             rout1.emplace(rout1.begin() + i, rout2[j]);
@@ -252,11 +252,11 @@ namespace algorithms
                     {
                         rout2.push_back(rout1[i]);
                         rout1.erase(rout1.begin() + i);
-                        double lenght = utils::length_rout(rout1, osman->dist_mat);
-                        lenght += utils::length_rout(rout2, osman->dist_mat);
-                        if (best_lenght > lenght)
+                        double length = utils::length_rout(rout1, osman->dist_mat);
+                        length += utils::length_rout(rout2, osman->dist_mat);
+                        if (best_length > length)
                         {
-                            best_lenght = lenght;
+                            best_length = length;
                             decision = { {i,0}, 3 };
                         }
                         rout1.emplace(rout1.begin() + i, rout2.back());
@@ -272,11 +272,11 @@ namespace algorithms
                         {
                             rout1.emplace(rout1.begin() + j, rout2[i]);
                             rout2.erase(rout2.begin() + i);
-                            double lenght = utils::length_rout(rout1, osman->dist_mat);
-                            lenght += utils::length_rout(rout2, osman->dist_mat);
-                            if (best_lenght > lenght)
+                            double length = utils::length_rout(rout1, osman->dist_mat);
+                            length += utils::length_rout(rout2, osman->dist_mat);
+                            if (best_length > length)
                             {
-                                best_lenght = lenght;
+                                best_length = length;
                                 decision = { {j,i}, 2 };
                             }
                             rout2.emplace(rout2.begin() + i, rout1[j]);
@@ -288,11 +288,11 @@ namespace algorithms
                     {
                         rout1.push_back(rout2[i]);
                         rout2.erase(rout2.begin() + i);
-                        double lenght = utils::length_rout(rout1, osman->dist_mat);
-                        lenght += utils::length_rout(rout2, osman->dist_mat);
-                        if (best_lenght > lenght)
+                        double length = utils::length_rout(rout1, osman->dist_mat);
+                        length += utils::length_rout(rout2, osman->dist_mat);
+                        if (best_length > length)
                         {
-                            best_lenght = lenght;
+                            best_length = length;
                             decision = { {0,i}, 4 };
                         }
                         rout2.emplace(rout2.begin() + i, rout1.back());
@@ -300,7 +300,7 @@ namespace algorithms
                     }
                 }
 
-                osman->BSTM[p][q] = (size_t)(best_lenght - base_lenght);
+                osman->BSTM[p][q] = (size_t)(best_length - base_length);
                 osman->BSTM[q][p] = 0;
                 osman->RECM[p][q] = decision;
                 osman->RECM[q][p] = { {0, 0}, 6 };
@@ -316,10 +316,10 @@ namespace algorithms
             {
                 if (p > q)
                     swap(p, q);
-                double base_lenght = utils::length_rout(routs[p], osman->dist_mat);
-                base_lenght += utils::length_rout(routs[q], osman->dist_mat);
+                double base_length = utils::length_rout(routs[p], osman->dist_mat);
+                base_length += utils::length_rout(routs[q], osman->dist_mat);
 
-                double best_lenght = base_lenght * 1.2;
+                double best_length = base_length * 1.2;
 
                 auto rout1 = routs[p];
                 auto rout2 = routs[q];
@@ -330,17 +330,17 @@ namespace algorithms
                     for (size_t j = 0; j < rout2.size(); ++j)
                     {
                         swap(rout1[i], rout2[j]);
-                        double lenght = utils::length_rout(rout1, osman->dist_mat);
-                        lenght += utils::length_rout(rout2, osman->dist_mat);
-                        if (best_lenght > lenght)
+                        double length = utils::length_rout(rout1, osman->dist_mat);
+                        length += utils::length_rout(rout2, osman->dist_mat);
+                        if (best_length > length)
                         {
-                            best_lenght = lenght;
+                            best_length = length;
                             decision = { {i,j}, 0 };
                         }
                         swap(rout1[i], rout2[j]);
                     }
 
-                osman->BSTM[p][q] = (size_t)(best_lenght - base_lenght);
+                osman->BSTM[p][q] = (size_t)(best_length - base_length);
                 osman->BSTM[q][p] = 0;
                 osman->RECM[p][q] = decision;
                 osman->RECM[q][p] = { {0, 0}, 6 };
@@ -369,10 +369,10 @@ namespace algorithms
         {
             if (p > q)
                 swap(p, q);
-            double base_lenght = utils::length_rout(routs[p], dist_mat);
-            base_lenght += utils::length_rout(routs[q], dist_mat);
+            double base_length = utils::length_rout(routs[p], dist_mat);
+            base_length += utils::length_rout(routs[q], dist_mat);
 
-            double best_lenght = base_lenght * 1.2;
+            double best_length = base_length * 1.2;
 
             auto rout1 = routs[p];
             auto rout2 = routs[q];
@@ -383,11 +383,11 @@ namespace algorithms
                 for (size_t j = 0; j < rout2.size(); ++j)
                 {
                     swap(rout1[i], rout2[j]);
-                    double lenght = utils::length_rout(rout1, dist_mat);
-                    lenght += utils::length_rout(rout2, dist_mat);
-                    if (best_lenght > lenght)
+                    double length = utils::length_rout(rout1, dist_mat);
+                    length += utils::length_rout(rout2, dist_mat);
+                    if (best_length > length)
                     {
-                        best_lenght = lenght;
+                        best_length = length;
                         decision = { {i,j}, 0 };
                     }
                     swap(rout1[i], rout2[j]);
@@ -401,11 +401,11 @@ namespace algorithms
                     {
                         rout2.emplace(rout2.begin() + j, rout1[i]);
                         rout1.erase(rout1.begin() + i);
-                        double lenght = utils::length_rout(rout1, dist_mat);
-                        lenght += utils::length_rout(rout2, dist_mat);
-                        if (best_lenght > lenght)
+                        double length = utils::length_rout(rout1, dist_mat);
+                        length += utils::length_rout(rout2, dist_mat);
+                        if (best_length > length)
                         {
-                            best_lenght = lenght;
+                            best_length = length;
                             decision = { {i,j}, 1 };
                         }
                         rout1.emplace(rout1.begin() + i, rout2[j]);
@@ -417,11 +417,11 @@ namespace algorithms
                 {
                     rout2.push_back(rout1[i]);
                     rout1.erase(rout1.begin() + i);
-                    double lenght = utils::length_rout(rout1, dist_mat);
-                    lenght += utils::length_rout(rout2, dist_mat);
-                    if (best_lenght > lenght)
+                    double length = utils::length_rout(rout1, dist_mat);
+                    length += utils::length_rout(rout2, dist_mat);
+                    if (best_length > length)
                     {
-                        best_lenght = lenght;
+                        best_length = length;
                         decision = { {i,0}, 3 };
                     }
                     rout1.emplace(rout1.begin() + i, rout2.back());
@@ -437,11 +437,11 @@ namespace algorithms
                     {
                         rout1.emplace(rout1.begin() + j, rout2[i]);
                         rout2.erase(rout2.begin() + i);
-                        double lenght = utils::length_rout(rout1, dist_mat);
-                        lenght += utils::length_rout(rout2, dist_mat);
-                        if (best_lenght > lenght)
+                        double length = utils::length_rout(rout1, dist_mat);
+                        length += utils::length_rout(rout2, dist_mat);
+                        if (best_length > length)
                         {
-                            best_lenght = lenght;
+                            best_length = length;
                             decision = { {j,i}, 2 };
                         }
                         rout2.emplace(rout2.begin() + i, rout1[j]);
@@ -453,11 +453,11 @@ namespace algorithms
                 {
                     rout1.push_back(rout2[i]);
                     rout2.erase(rout2.begin() + i);
-                    double lenght = utils::length_rout(rout1, dist_mat);
-                    lenght += utils::length_rout(rout2, dist_mat);
-                    if (best_lenght > lenght)
+                    double length = utils::length_rout(rout1, dist_mat);
+                    length += utils::length_rout(rout2, dist_mat);
+                    if (best_length > length)
                     {
-                        best_lenght = lenght;
+                        best_length = length;
                         decision = { {0,i}, 4 };
                     }
                     rout2.emplace(rout2.begin() + i, rout1.back());
@@ -465,7 +465,7 @@ namespace algorithms
                 }
             }
 
-            BSTM[p][q] = (size_t)(best_lenght - base_lenght);
+            BSTM[p][q] = (size_t)(best_length - base_length);
             BSTM[q][p] = 0;
             RECM[p][q] = decision;
             RECM[q][p] = { {0, 0}, 6 };
@@ -545,10 +545,10 @@ namespace algorithms
 
                     auto children = crossover(population[a].second, population[b].second);
                     pair<double, gen> gen1 = { 0, children.first };
-                    gen1.first = lenght_gen(gen1.second);
+                    gen1.first = length_gen(gen1.second);
                     population.push_back(gen1);
                     pair<double, gen> gen2 = { 0, children.second };
-                    gen2.first = lenght_gen(gen2.second);
+                    gen2.first = length_gen(gen2.second);
                     population.push_back(gen2);
                 }
 
@@ -582,19 +582,19 @@ namespace algorithms
             vector<size_t> sep;
         };
 
-        double lenght_gen(const gen& gen)
+        double length_gen(const gen& gen)
         {
             size_t sep_in = 0;
-            double lenght = dist_mat[0][gen.rout[0]] + dist_mat[gen.rout.back()][0];
+            double length = dist_mat[0][gen.rout[0]] + dist_mat[gen.rout.back()][0];
             for (size_t i = 1; i < gen.rout.size(); ++i)
                 if (sep_in < gen.sep.size() && i == gen.sep[sep_in])
                 {
-                    lenght += dist_mat[0][gen.rout[i]] + dist_mat[gen.rout[i - 1]][0];;
+                    length += dist_mat[0][gen.rout[i]] + dist_mat[gen.rout[i - 1]][0];;
                     ++sep_in;
                 }
                 else
-                    lenght += dist_mat[gen.rout[i - 1]][gen.rout[i]];
-            return lenght;
+                    length += dist_mat[gen.rout[i - 1]][gen.rout[i]];
+            return length;
         }
 
         void check_repeat(const gen& gen)
@@ -706,7 +706,7 @@ namespace algorithms
                 std::shuffle(vec.begin(), vec.end(), rng);
                 auto sep = generate_sep();
                 pair<double, gen> gen = { 0, { vec, sep } };
-                gen.first = lenght_gen(gen.second);
+                gen.first = length_gen(gen.second);
                 populatin.push_back(gen);
             }
 
