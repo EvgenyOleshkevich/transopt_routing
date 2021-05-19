@@ -579,6 +579,63 @@ void ant_test()
         cout << "check: " << check << endl;
 }
 
+void osman_gready_test()
+{
+    const char* name = "osman_res.txt";
+    std::ofstream out(name);
+    out.close();
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+
+    unsigned int start_time = clock();
+    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+    double length = 0;
+    vector<size_t> checks;
+    vector<project::Osman_new> reults;
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+
+        project::GreadyBase greedy(
+            dist_inner_cluster[i],
+            sort_matrix,
+            weight_inner_cluster[i],
+            transports);
+        greedy.run();
+
+        auto data = project::Osman_new::transform_data(greedy.res);
+
+        project::Osman_new osman(dist_inner_cluster[i],
+            weight_inner_cluster[i],
+            transports, data.first,
+            data.second, data.first.size());
+
+        osman.run();
+        //osman.add_zero_vertex();
+        reults.push_back(osman);
+    }
+
+    cout << "# osman" << endl;
+    cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        length += reults[i].length();
+        print::print_file(reults[i].res, clusters, i, name);
+        checks.push_back(checkers::check_matrix(reults[i].res, dist_inner_cluster[i].size()));
+        checks.push_back(checkers::check_transport(reults[i].res, reults[i].transport_id, weight_inner_cluster[i]));
+    }
+
+    cout << "# length: " << length << endl;
+    for (size_t check : checks)
+        cout << "check: " << check << endl;
+}
+
 void osman_test()
 {
     const char* name = "tests/osman_res.txt";
@@ -610,7 +667,7 @@ void osman_test()
             data.second, data.first.size());
 
         osman.run();
-        osman.add_zero_vertex();
+        //osman.add_zero_vertex();
         reults.push_back(osman);
     }
 
@@ -703,7 +760,7 @@ void local_search_cluster_test_old()
             transports, data.first,
             data.second, data.first.size());
         osman.run();
-        osman.add_zero_vertex();
+        //osman.add_zero_vertex();
         len = osman.length();
         cout << "osman length: " << len << endl;
         sum_osman += len;
@@ -771,7 +828,6 @@ void final_test()
             data.second, data.first.size());
 
         osman.run();
-        osman.add_zero_vertex();
 
         project::WidhtNeighborhoodSearch local(dist_inner_cluster[i],
             weight_inner_cluster[i],
@@ -814,8 +870,66 @@ void final_test()
     print::print_file(local.res, name);
 }
 
+void opt_3_test()
+{
+    const char* name = "tests/opt_3_greedy_res.txt";
+    std::ofstream out(name);
+    out.close();
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+
+    unsigned int start_time = clock();
+    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+
+    double length = 0;
+    vector<size_t> checks;
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+
+        project::GreadyBase greedy(
+            dist_inner_cluster[i],
+            sort_matrix,
+            weight_inner_cluster[i],
+            transports);
+        greedy.run();
+
+        auto data = project::Osman_new::transform_data(greedy.res);
+        project::Osman_new::remove_zero_vertex(data.first);
+        for (size_t j = 0; j < data.first.size(); j++)
+        {
+            double old_len = 2000000000;
+            double cur_len = 1000000000;
+            while (old_len - cur_len - EPS > 0)
+            {
+                old_len = cur_len;
+                cur_len = TSP::local_opt::opt_3(data.first[i], dist_inner_cluster[i]);
+            }
+        }
+        project::Osman_new::add_zero_vertex(data.first);
+        project::Osman_new osman(dist_inner_cluster[i],
+            weight_inner_cluster[i],
+            transports, data.first,
+            data.second, data.first.size());
+        length += osman.length();
+        print::print_file(osman.res, clusters, i, name);
+        checks.push_back(checkers::check_matrix(osman.res, dist_inner_cluster[i].size()));
+    }
+
+    cout << "# greedy" << endl;
+    cout << "# time: " << clock() - start_time << " millisec " << endl;
+    cout << "# length: " << length << endl;
+    for (size_t check : checks)
+        cout << "check: " << check << endl;
+}
+
 int main()
 {
-    final_test();
+    opt_3_test();
     return 0;
 }

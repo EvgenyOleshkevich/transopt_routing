@@ -37,7 +37,7 @@ namespace TSP
         // require zero vertex
         void opt_2_best_parallel(std::vector<size_t>&, const matrix&);
 
-        void opt_3(std::vector<size_t>&, const matrix&);
+        double opt_3(std::vector<size_t>&, const matrix&);
 
         // require zero vertex
         void opt_3_fast(std::vector<size_t>&, const matrix&);

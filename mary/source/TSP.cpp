@@ -505,11 +505,12 @@ namespace TSP
             }
         }
 
-        void opt_3(std::vector<size_t>& rout, const matrix& dist_mat)
+        double opt_3(std::vector<size_t>& rout, const matrix& dist_mat)
         {
+            double best_len = utils::length_rout(rout, dist_mat);
             if (rout.size() < 4)
-                return;
-            auto best_len = utils::length_rout(rout, dist_mat);
+                return best_len;
+            
             auto best_rout = rout;
             // 3 ребра смежны
             for (size_t i = 0; i < rout.size() - 3; ++i)
@@ -653,6 +654,8 @@ namespace TSP
                         }
                     }
             rout = best_rout;
+
+            return best_len;
         }
 
         void opt_3_fast(std::vector<size_t>& rout, const matrix& dist_mat)

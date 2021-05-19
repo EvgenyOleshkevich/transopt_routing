@@ -446,6 +446,341 @@ namespace balancedVRP
 			}
 		};
 
+		class Osman_new
+		{
+		public:
+			Osman_new(const matrix& dist_mat, const vector<double>& weights,
+				const vector<Transport>& transports, int_matrix routs,
+				const vector<size_t> transport_id, const size_t count_rout) :
+				res(routs), transport_id(transport_id),
+				dist_mat(dist_mat), transports(transports), weights(weights),
+				ts((size_t)(std::max(7.0, 9.6 * log(dist_mat.size() * count_rout) - 40))),
+				count_rout(count_rout)// 13
+			{}
+
+			void run()
+			{
+				init_remain_weight();
+
+				//std::unique_ptr<checker_change> checker(new checker_change_widht_local(this));
+				auto routs = res;
+				auto best_length = length();
+				move_table = get_move_table();
+
+				size_t max_iter = (size_t)(340 + 0.000353 * 5 * utils::sqr((double)dist_mat.size() * count_rout));
+				fill_BSTM_RECM(routs);
+				max_iter = 10;
+				unsigned int start_time = clock();
+				for (size_t i = 0; clock() - start_time < time_limit; ++i)
+				{
+					auto index = get_max_free_BSTM(i, routs);
+					size_t p = index.first;
+					size_t q = index.second;
+					if (BSTM[p][q] - EPS < 0)
+						break;
+
+					auto a = RECM[p][q].first.first;
+					auto b = RECM[p][q].first.second;
+					auto way = RECM[p][q].second;
+					switch (way)
+					{
+					case 0:
+					{
+						move_table[p][routs[p][a]] = i;
+						move_table[q][routs[q][b]] = i;
+						remain_weight[p] += weights[routs[p][a]] - weights[routs[q][b]];
+						remain_weight[q] += weights[routs[q][b]] - weights[routs[p][a]];
+						swap(routs[p][a], routs[q][b]);
+						break;
+					}
+					case 1:
+					{
+						move_table[p][routs[p][a]] = i;
+						remain_weight[p] += weights[routs[p][a]];
+						remain_weight[q] -= weights[routs[p][a]];
+						routs[q].emplace(routs[q].begin() + b, routs[p][a]);
+						routs[p].erase(routs[p].begin() + a);
+						break;
+					}
+					case 2:
+					{
+						move_table[q][routs[q][b]] = i;
+						remain_weight[p] -= weights[routs[q][b]];
+						remain_weight[q] += weights[routs[q][b]];
+						routs[p].emplace(routs[p].begin() + a, routs[q][b]);
+						routs[q].erase(routs[q].begin() + b);
+						break;
+					}
+					case 3:
+					{
+						move_table[p][routs[p][a]] = i;
+						remain_weight[p] += weights[routs[p][a]];
+						remain_weight[q] -= weights[routs[p][a]];
+						routs[q].push_back(routs[p][a]);
+						routs[p].erase(routs[p].begin() + a);
+						break;
+					}
+					case 4:
+					{
+						remain_weight[p] -= weights[routs[q][b]];
+						remain_weight[q] += weights[routs[q][b]];
+						move_table[q][routs[q][b]] = i;
+						routs[p].push_back(routs[q][b]);
+						routs[q].erase(routs[q].begin() + b);
+						break;
+					}
+					default:
+						break;
+					}
+					auto len = length(routs);
+					if (best_length > len)
+					{
+						best_length = len;
+						res = routs;
+					}
+					recalculate_BSTM_RECM(routs, p, q);
+				}
+			}
+
+			double length()
+			{
+				double length = 0;
+				for (size_t i = 0; i < res.size(); ++i)
+				{
+					double len = utils::length_rout(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
+					if (len >= EPS)
+						length += len + transports[transport_id[i]].cost_start;
+				}
+				return length;
+			}
+
+			double length(const int_matrix& routs)
+			{
+				double length = 0;
+				for (size_t i = 0; i < routs.size(); ++i)
+				{
+					double len = utils::length_rout(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
+					if (len >= EPS)
+						length += len + transports[transport_id[i]].cost_start;
+				}
+				return length;
+			}
+
+			static pair<int_matrix, vector<size_t>> transform_data(const vector<int_matrix>& routs)
+			{
+				int_matrix res;
+				vector<size_t> transport_id;
+
+				for (size_t trans_id = 0; trans_id < routs.size(); trans_id++)
+					for (size_t i = 0; i < routs[trans_id].size(); i++)
+					{
+						transport_id.push_back(trans_id);
+						res.push_back(routs[trans_id][i]);
+					}
+				//remove_zero_vertex(res);
+
+				return { res , transport_id };
+			}
+
+			static void remove_zero_vertex(int_matrix& routs)
+			{
+				for (size_t i = 0; i < routs.size(); i++)
+				{
+					routs[i].pop_back();
+					routs[i].erase(routs[i].begin());
+				}
+			}
+
+			static void add_zero_vertex(int_matrix& routs)
+			{
+				for (size_t i = 0; i < routs.size(); i++)
+				{
+					routs[i].push_back(0);
+					routs[i].emplace(routs[i].begin(), 0);
+				}
+			}
+
+			int_matrix res;
+			const vector<size_t> transport_id;
+		private:
+			const matrix& dist_mat;
+			const vector<Transport>& transports;
+			const vector<double>& weights;
+			const size_t ts;// длина списка запрета
+			const size_t count_rout;
+			const double coef_access = 1.1;
+			const double time_limit = 40000;
+
+			matrix BSTM;
+			vector<vector<pair<pair<size_t, size_t>, size_t>>> RECM;
+			vector<double> remain_weight;
+			vector<vector<int>> move_table; // rout*vertex
+			// вершины и способ обмена
+			// 0 - обмен, 1 - левая в правую перед указанной, 2 - правая в левую перед указанной
+			// 3 - левая в правую в конец, 4 - правая в левую в конец, 5 - ничего
+
+			void init_remain_weight()
+			{
+				remain_weight = vector<double>(res.size());
+				for (size_t i = 0; i < res.size(); i++)
+				{
+					double weight = 0;
+					for (const size_t vertex : res[i])
+						weight += weights[vertex];
+
+					remain_weight[i] = transports[transport_id[i]].capacity - weight;
+				}
+			}
+
+			vector<vector<int>> get_move_table()
+			{
+				return vector<vector<int>>(count_rout, vector<int>(dist_mat.size(), -1000000000));
+			}
+
+			void check_change(const int_matrix& routs, size_t p, size_t q)
+			{
+				if (p > q)
+					swap(p, q);
+
+				const vector<size_t>& rout1 = routs[p];
+				const vector<size_t>& rout2 = routs[q];
+				pair<pair<size_t, size_t>, size_t> decision = { {0,0}, 5 };
+
+
+				double cost1 = transports[transport_id[p]].cost_by_dist;
+				double cost2 = transports[transport_id[q]].cost_by_dist;
+				double cur_len = utils::length_rout(rout1, dist_mat)
+					* cost1
+					+ utils::length_rout(rout2, dist_mat)
+					* cost2;
+				double best_len = cur_len * coef_access;
+
+				// обмен
+				for (size_t i = 1; i < rout1.size() - 1; i++)
+				{
+					size_t A = rout1[i];
+					double len = cur_len
+						- (dist_mat[rout1[i - 1]][A]
+							+ dist_mat[A][rout1[i + 1]]) * cost1;
+
+					for (size_t j = 1; j < rout2.size() - 1; j++)
+					{
+						size_t B = rout2[j];
+						if (remain_weight[p] + weights[A] - weights[B] < 0
+							|| remain_weight[q] - weights[A] + weights[B] < 0)
+							continue;
+
+						double add_len = (dist_mat[rout2[j - 1]][A]
+							+ dist_mat[A][rout2[j + 1]]) * cost2
+							- (dist_mat[rout2[j - 1]][B]
+								+ dist_mat[B][rout2[j + 1]]) * cost2
+							+ (dist_mat[rout1[i - 1]][B]
+								+ dist_mat[B][rout1[i + 1]]) * cost1;
+
+						if (best_len > len + add_len)
+						{
+							best_len = len + add_len;
+							decision = { {i,j}, 0 };
+						}
+					}
+				}
+
+
+				// 1 идет в 2
+				if (rout1.size() > 2)
+					for (size_t i = 1; i < rout1.size() - 1; i++)
+					{
+						size_t A = rout1[i];
+						if (remain_weight[q] < weights[A]);
+							continue;
+						double len = cur_len
+							- (dist_mat[rout1[i - 1]][A]
+								+ dist_mat[A][rout1[i + 1]]) * cost1;
+
+						for (size_t j = 1; j < rout2.size(); j++)
+						{
+							double add_len = (dist_mat[rout2[j - 1]][A]
+								+ dist_mat[A][rout2[j]]) * cost2;
+
+							if (best_len > len + add_len)
+							{
+								best_len = len + add_len;
+								decision = { {i,j}, 1 };
+							}
+						}
+					}
+
+				// 2 идет в 1
+				if (rout2.size() > 2)
+					for (size_t i = 1; i < rout2.size() - 1; i++)
+					{
+						size_t A = rout2[i];
+						if (remain_weight[p] < weights[A]);
+							continue;
+						double len = cur_len
+							- (dist_mat[rout2[i - 1]][A]
+								+ dist_mat[A][rout2[i + 1]]) * cost2;
+
+						for (size_t j = 1; j < rout1.size(); j++)
+						{
+							double add_len = (dist_mat[rout1[j - 1]][A]
+								+ dist_mat[A][rout1[j]]) * cost1;
+
+							if (best_len > len + add_len)
+							{
+								best_len = len + add_len;
+								decision = { {j,i}, 2 };
+							}
+						}
+					}
+
+				BSTM[p][q] = cur_len * coef_access - best_len;
+				BSTM[q][p] = 0;
+				RECM[p][q] = decision;
+				RECM[q][p] = { {0, 0}, 5 };
+			}
+
+			void fill_BSTM_RECM(const vector<vector<size_t>>& routs)
+			{
+				BSTM = matrix(count_rout, vector < double>(count_rout, 0));
+				RECM = vector<vector<pair<pair<size_t, size_t>, size_t>>>(count_rout,
+					vector<pair<pair<size_t, size_t>, size_t>>(count_rout, { {0,0}, 5 }));
+				for (size_t p = 0; p < count_rout; ++p)
+					for (size_t q = p + 1; q < count_rout; ++q)
+						check_change(routs, p, q);
+			}
+
+			void recalculate_BSTM_RECM(const vector<vector<size_t>>& routs, size_t p, size_t q)
+			{
+				for (size_t i = 0; i < count_rout; ++i)
+					if (i != p)
+						check_change(routs, p, i);
+
+				for (size_t i = 0; i < count_rout; ++i)
+					if (i != p && i != q)
+						check_change(routs, i, q);
+			}
+
+			pair<size_t, size_t> get_max_free_BSTM(size_t iter, const vector<vector<size_t>>& routs)
+			{
+				auto res = pair<size_t, size_t>(0, 0);
+				double max = 0;
+				for (size_t p = 0; p < count_rout; ++p)
+					for (size_t q = p + 1; q < count_rout; ++q)
+						if (max < BSTM[p][q])
+						{
+							auto iter_num1 = iter - move_table[q][routs[p][RECM[p][q].first.first]];
+							auto iter_num2 = iter - move_table[p][routs[q][RECM[p][q].first.second]];
+							if (iter_num1 > ts && iter_num2 > ts)
+							{
+								max = BSTM[p][q];
+								res = { p, q };
+							}
+						}
+				return res;
+			}
+		};
+
 		class Osman
 		{
 		public:
@@ -944,7 +1279,7 @@ namespace balancedVRP
 
 			void run() {
 				init_remain_weight();
-				double best_len = length_withuot_start();
+				double best_len = length();
 				auto routs = res;
 
 				std::random_device rd;
@@ -997,7 +1332,11 @@ namespace balancedVRP
 			{
 				double length = 0;
 				for (size_t i = 0; i < res.size(); ++i)
-					length += utils::length_rout_0(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
+				{
+					double len = utils::length_rout_0(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
+					if (len >= EPS)
+						length += len + transports[transport_id[i]].cost_start;
+				}
 				return length;
 			}
 
@@ -1005,7 +1344,11 @@ namespace balancedVRP
 			{
 				double length = 0;
 				for (size_t i = 0; i < routs.size(); ++i)
-					length += utils::length_rout_0(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
+				{
+					double len = utils::length_rout_0(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
+					if (len >= EPS)
+						length += len + transports[transport_id[i]].cost_start;
+				}
 				return length;
 			}
 
@@ -1032,22 +1375,6 @@ namespace balancedVRP
 				}
 			}
 
-			double length_withuot_start()
-			{
-				double length = 0;
-				for (size_t i = 0; i < res.size(); ++i)
-					length += utils::length_rout_0(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
-				return length;
-			}
-
-			double length_withuot_start(const int_matrix& routs)
-			{
-				double length = 0;
-				for (size_t i = 0; i < routs.size(); ++i)
-					length += utils::length_rout_0(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
-				return length;
-			}
-
 			class Neighborhood
 			{
 			public:
@@ -1067,7 +1394,7 @@ namespace balancedVRP
 						TSP::local_opt::opt_2_fast2(
 							routs[i],
 							data->dist_mat);
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 
@@ -1116,7 +1443,7 @@ namespace balancedVRP
 						}
 					}
 
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 
@@ -1168,7 +1495,7 @@ namespace balancedVRP
 						}
 					}
 
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 
@@ -1222,7 +1549,7 @@ namespace balancedVRP
 						}
 					}
 
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 
@@ -1279,7 +1606,7 @@ namespace balancedVRP
 						}
 					}
 
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 
@@ -1340,7 +1667,7 @@ namespace balancedVRP
 
 						}
 
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 
@@ -1356,6 +1683,10 @@ namespace balancedVRP
 								continue;
 							vector<size_t>& rout1 = routs[r1];
 							vector<size_t>& rout2 = routs[r2];
+
+							if (rout2.size() < 3)
+								continue;
+
 							double cost1 = data->transports[data->transport_id[r1]].cost_by_dist;
 							double cost2 = data->transports[data->transport_id[r2]].cost_by_dist;
 							double cur_len = utils::length_rout(rout1, data->dist_mat)
@@ -1399,7 +1730,7 @@ namespace balancedVRP
 
 						}
 
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 		};
@@ -1418,7 +1749,7 @@ namespace balancedVRP
 
 			void run() {
 				init_remain_weight();
-				double best_len = length_withuot_start();
+				double best_len = length();
 				auto routs = res;
 
 				std::random_device rd;
@@ -1434,10 +1765,8 @@ namespace balancedVRP
 				methods.push_back(ptr(new VertexRoutSwap(this)));
 				methods.push_back(ptr(new VertexRoutEject(this)));
 
-				vector<size_t> used(methods.size(), 1);
-				size_t used_count = methods.size();
-				used[0] += 5;
-				used_count += 5;
+				vector<size_t> used{5, 1, 1, 1, 1, 3, 3 };
+				size_t used_count = 15;
 
 				unsigned int start_time = clock();
 				while (clock() - start_time < time_limit)
@@ -1471,7 +1800,11 @@ namespace balancedVRP
 			{
 				double length = 0;
 				for (size_t i = 0; i < res.size(); ++i)
-					length += utils::length_rout_0(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
+				{
+					double len = utils::length_rout_0(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
+					if (len >= EPS)
+						length += len + transports[transport_id[i]].cost_start;
+				}
 				return length;
 			}
 
@@ -1479,7 +1812,11 @@ namespace balancedVRP
 			{
 				double length = 0;
 				for (size_t i = 0; i < routs.size(); ++i)
-					length += utils::length_rout_0(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist + transports[transport_id[i]].cost_start;
+				{
+					double len = utils::length_rout_0(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
+					if (len >= EPS)
+						length += len + transports[transport_id[i]].cost_start;
+				}
 				return length;
 			}
 
@@ -1508,22 +1845,6 @@ namespace balancedVRP
 				}
 			}
 
-			double length_withuot_start()
-			{
-				double length = 0;
-				for (size_t i = 0; i < res.size(); ++i)
-					length += utils::length_rout_0(res[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
-				return length;
-			}
-
-			double length_withuot_start(const int_matrix& routs)
-			{
-				double length = 0;
-				for (size_t i = 0; i < routs.size(); ++i)
-					length += utils::length_rout_0(routs[i], dist_mat) * transports[transport_id[i]].cost_by_dist;
-				return length;
-			}
-
 			class Neighborhood
 			{
 			public:
@@ -1543,7 +1864,7 @@ namespace balancedVRP
 						TSP::local_opt::opt_2_fast2(
 							routs[i],
 							data->dist_mat);
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 
@@ -1592,7 +1913,7 @@ namespace balancedVRP
 						}
 					}
 
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 
@@ -1644,7 +1965,7 @@ namespace balancedVRP
 						}
 					}
 
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 
@@ -1698,7 +2019,7 @@ namespace balancedVRP
 						}
 					}
 
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 
@@ -1755,7 +2076,7 @@ namespace balancedVRP
 						}
 					}
 
-					return data->length_withuot_start(routs);
+					return data->length(routs);
 				}
 			};
 
@@ -1821,7 +2142,7 @@ namespace balancedVRP
 
 						}
 
-					return data->length_withuot_start();;
+					return data->length();;
 				}
 
 				void check_different_clust(int_matrix& routs, const size_t r1, const size_t r2)
@@ -1895,6 +2216,10 @@ namespace balancedVRP
 							}
 							vector<size_t>& rout1 = routs[r1];
 							vector<size_t>& rout2 = routs[r2];
+
+							if (rout2.size() < 3)
+								continue;
+
 							double cost1 = data->transports[data->transport_id[r1]].cost_by_dist;
 							double cost2 = data->transports[data->transport_id[r2]].cost_by_dist;
 							double cur_len = utils::length_rout(rout1, data->dist_mat)
@@ -1938,13 +2263,17 @@ namespace balancedVRP
 
 						}
 
-					return data->length_withuot_start();;
+					return data->length();;
 				}
 
 				void check_different_clust(int_matrix& routs, const size_t r1, const size_t r2)
 				{
 					vector<size_t>& rout1 = routs[r1];
 					vector<size_t>& rout2 = routs[r2];
+
+					if (rout2.size() < 3)
+						return;
+
 					double cost1 = data->transports[data->transport_id[r1]].cost_by_dist;
 					double cost2 = data->transports[data->transport_id[r2]].cost_by_dist;
 					double cur_len = utils::length_rout(rout1, data->dist_mat)
