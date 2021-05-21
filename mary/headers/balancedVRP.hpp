@@ -128,6 +128,7 @@ namespace balancedVRP
 
 			void run()
 			{
+				res = vector<int_matrix>();
 				vector <size_t> used(dist_mat.size(), 0);
 				used[0] = 1;
 				size_t count_add = 1;
@@ -179,7 +180,83 @@ namespace balancedVRP
 				}
 			}
 
-			
+			pair<double, double> grid_search_param()
+			{
+				run();
+				double mean_edge = utils::mean_edge(dist_mat);
+				double best_len = length();
+				pair<double, double> best_coef;
+				vector<int_matrix> best_res = res;
+
+
+				for (double coef_filling = 0; coef_filling < 0.2; coef_filling += 0.01)
+					for (double coef_cut = 0.6; coef_cut < 6; coef_cut *= 1.1)
+					{
+						res = vector<int_matrix>();
+						vector <size_t> used(dist_mat.size(), 0);
+						used[0] = 1;
+						size_t count_add = 1;
+						for (const Transport& transport : transports)
+						{
+
+							int_matrix routs;
+
+							for (size_t i = 0; i < transport.count; ++i)
+							{
+								vector<size_t> rout(1, 0);
+								double remain_weight = transport.capacity;
+								size_t vertex = 0;
+								for (size_t order_i = 0; order_i < sorted_dist_mat.size() && used[vertex] == 1; ++order_i)
+									vertex = sorted_dist_mat[0][order_i].second;
+
+								while (true/*remain_weight >= weights[vertex]*/)
+								{
+									used[vertex] = 1;
+									remain_weight -= weights[vertex];
+									rout.push_back(vertex);
+									++count_add;
+									if (count_add == used.size())
+										break;
+									if (remain_weight < transport.capacity * coef_filling)
+										break;
+
+									size_t new_vertex = vertex;
+									size_t order_i = 0;
+									for (;
+										order_i < sorted_dist_mat.size()
+										&& sorted_dist_mat[vertex][order_i].first < mean_edge * coef_filling
+										&& (used[new_vertex] == 1
+											|| remain_weight < weights[new_vertex]);
+										++order_i)
+									{
+										new_vertex = sorted_dist_mat[vertex][order_i].second;
+									}
+									if (used[new_vertex] == 1 || remain_weight < weights[new_vertex])
+										break;
+									vertex = new_vertex;
+								}
+								//std::cout << "remain_weight: " << remain_weight << std::endl;
+								rout.push_back(0);
+								routs.push_back(rout);
+								if (count_add == used.size())
+									break;
+							}
+							res.push_back(routs);
+							if (count_add == used.size())
+								break;
+						}
+						double len = length();
+						if (best_len > len && count_add == used.size())
+						{
+							best_len = len;
+							best_coef.first = coef_filling;
+							best_coef.second = coef_cut;
+							best_res = res;
+						}
+					}
+				res = best_res;
+				return best_coef;
+			}
 
 			vector<int_matrix> res;
 			double length()

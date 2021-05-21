@@ -405,286 +405,645 @@ void greedy_parallel_test()
     cout << "time: " << clock() - start_time;
 }
 
-void clurk_test()
-{
-    const char* name = "tests/clurk_res.txt";
-    std::ofstream out(name);
-    out.close();
-    read_file();
-    read_transports();
-    dist_mat = utils::fill_matrix(x, y);
-
-    unsigned int start_time = clock();
-    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
-
-    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
-    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
-
-
-    double length = 0;
-    vector<size_t> checks;
-    vector<project::ClarkRight> reults;
-    for (size_t i = 0; i < clusters.size(); i++)
+namespace base_test {
+    void sweep_test()
     {
-        project::ClarkRight clurk(dist_inner_cluster[i], weight_inner_cluster[i], transports);
-        clurk.run();
-        reults.push_back(clurk);
+        const char* name = "tests/sweeping_res.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
+
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+        auto x_coord = clustering::get_weight_inner_cluster(x, clusters);
+        auto y_coord = clustering::get_weight_inner_cluster(y, clusters);
+
+
+        double length = 0;
+        vector<size_t> checks;
+        vector<project::Sweeping> results;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            project::Sweeping sweep(dist_inner_cluster[i], x_coord[i], y_coord[i], weight_inner_cluster[i], transports);
+            sweep.run();
+            results.push_back(sweep);
+        }
+
+        cout << "# sweeping" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+
+            length += results[i].length();
+            print::print_file(results[i].res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(results[i].res, dist_inner_cluster[i].size()));
+            for (size_t j = 0; j < results[i].res.size(); j++)
+                checks.push_back(checkers::check_transport(results[i].res[j], transports[j], weight_inner_cluster[i]));
+        }
+
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
     }
 
-    cout << "# clurk" << endl;
-    cout << "# time: " << clock() - start_time << " millisec " << endl;
-
-    for (size_t i = 0; i < clusters.size(); i++)
+    void clurk_test()
     {
+        const char* name = "tests/clurk_res.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
 
-        length += reults[i].length();
-        print::print_file(reults[i].res, clusters, i, name);
-        checks.push_back(checkers::check_matrix(reults[i].res, dist_inner_cluster[i].size()));
-        for (size_t j = 0; j < reults[i].res.size(); j++)
-            checks.push_back(checkers::check_transport(reults[i].res[j], transports[j], weight_inner_cluster[i]));
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+
+        double length = 0;
+        vector<size_t> checks;
+        vector<project::ClarkRight> results;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            project::ClarkRight clurk(dist_inner_cluster[i], weight_inner_cluster[i], transports);
+            clurk.run();
+            results.push_back(clurk);
+        }
+
+        cout << "# clurk" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+
+            length += results[i].length();
+            print::print_file(results[i].res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(results[i].res, dist_inner_cluster[i].size()));
+            for (size_t j = 0; j < results[i].res.size(); j++)
+                checks.push_back(checkers::check_transport(results[i].res[j], transports[j], weight_inner_cluster[i]));
+        }
+
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
     }
 
-    cout << "# length: " << length << endl;
-    for (size_t check : checks)
-        cout << "check: " << check << endl;
+    void greedy_test()
+    {
+        const char* name = "tests/greedy_res.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
+
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+
+        double length = 0;
+        vector<size_t> checks;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+
+            project::GreadyBase greedy(
+                dist_inner_cluster[i],
+                sort_matrix,
+                weight_inner_cluster[i],
+                transports);
+            greedy.run();
+            length += greedy.length();
+            print::print_file(greedy.res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(greedy.res, dist_inner_cluster[i].size()));
+        }
+
+        cout << "# greedy" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
+
+    }
+
+    void ant_test()
+    {
+        const char* name = "tests/ant_res.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
+
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+
+        double length = 0;
+        vector<size_t> checks;
+        vector<Ant_algorithm> results;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            Ant_algorithm ant(dist_inner_cluster[i], weight_inner_cluster[i], transports);
+            ant.run();
+            results.push_back(ant);
+        }
+
+        cout << "# ant" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            length += results[i].length();
+            print::print_file(results[i].res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(results[i].res, dist_inner_cluster[i].size()));
+            for (size_t j = 0; j < results[i].res.size(); j++)
+                checks.push_back(checkers::check_transport(results[i].res[j], transports[j], weight_inner_cluster[i]));
+        }
+
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
+    }
 }
 
-void sweep_test()
-{
-    const char* name = "tests/sweeping_res.txt";
-    std::ofstream out(name);
-    out.close();
-    read_file();
-    read_transports();
-    dist_mat = utils::fill_matrix(x, y);
-
-    unsigned int start_time = clock();
-    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
-
-    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
-    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
-    auto x_coord = clustering::get_weight_inner_cluster(x, clusters);
-    auto y_coord = clustering::get_weight_inner_cluster(y, clusters);
-
-
-    double length = 0;
-    vector<size_t> checks;
-    vector<project::Sweeping> reults;
-    for (size_t i = 0; i < clusters.size(); i++)
+namespace osman_test {
+    void sweep_test()
     {
-        project::Sweeping sweep(dist_inner_cluster[i], x_coord[i], y_coord[i], weight_inner_cluster[i], transports);
-        sweep.run();
-        reults.push_back(sweep);
+        const char* name = "tests/osman_sweep_test.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
+
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+        auto x_coord = clustering::get_weight_inner_cluster(x, clusters);
+        auto y_coord = clustering::get_weight_inner_cluster(y, clusters);
+
+        double length = 0;
+        vector<size_t> checks;
+        vector<project::Osman> results;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            project::Sweeping sweep(dist_inner_cluster[i], x_coord[i], y_coord[i], weight_inner_cluster[i], transports);
+            sweep.run();
+
+            auto data = project::Osman::transform_data(sweep.res);
+
+            project::Osman osman(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, data.first,
+                data.second, data.first.size());
+
+            osman.run();
+            osman.add_zero_vertex();
+            results.push_back(osman);
+        }
+
+        cout << "# osman" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            length += results[i].length();
+            print::print_file(results[i].res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(results[i].res, dist_inner_cluster[i].size()));
+            checks.push_back(checkers::check_transport(results[i].res, results[i].transport_id, weight_inner_cluster[i]));
+        }
+
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
     }
 
-    cout << "# sweeping" << endl;
-    cout << "# time: " << clock() - start_time << " millisec " << endl;
-
-    for (size_t i = 0; i < clusters.size(); i++)
+    void clark_test()
     {
+        const char* name = "tests/osman_clark_test.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
 
-        length += reults[i].length();
-        print::print_file(reults[i].res, clusters, i, name);
-        checks.push_back(checkers::check_matrix(reults[i].res, dist_inner_cluster[i].size()));
-        for (size_t j = 0; j < reults[i].res.size(); j++)
-            checks.push_back(checkers::check_transport(reults[i].res[j], transports[j], weight_inner_cluster[i]));
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+        double length = 0;
+        vector<size_t> checks;
+        vector<project::Osman> results;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            project::ClarkRight clurk(dist_inner_cluster[i], weight_inner_cluster[i], transports);
+            clurk.run();
+
+            auto data = project::Osman::transform_data(clurk.res);
+
+            project::Osman osman(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, data.first,
+                data.second, data.first.size());
+
+            osman.run();
+            osman.add_zero_vertex();
+            results.push_back(osman);
+        }
+
+        cout << "# osman_clark_test" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            length += results[i].length();
+            print::print_file(results[i].res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(results[i].res, dist_inner_cluster[i].size()));
+            checks.push_back(checkers::check_transport(results[i].res, results[i].transport_id, weight_inner_cluster[i]));
+        }
+
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
     }
 
-    cout << "# length: " << length << endl;
-    for (size_t check : checks)
-        cout << "check: " << check << endl;
+    void gready_test()
+    {
+        const char* name = "osman_gready_res.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
+
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+        double length = 0;
+        vector<size_t> checks;
+        vector<project::Osman> results;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+
+            project::GreadyBase greedy(
+                dist_inner_cluster[i],
+                sort_matrix,
+                weight_inner_cluster[i],
+                transports);
+            greedy.run();
+
+            auto data = project::Osman::transform_data(greedy.res);
+
+            project::Osman osman(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, data.first,
+                data.second, data.first.size());
+
+            osman.run();
+            osman.add_zero_vertex();
+            results.push_back(osman);
+        }
+
+        cout << "# osman" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            length += results[i].length();
+            print::print_file(results[i].res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(results[i].res, dist_inner_cluster[i].size()));
+            checks.push_back(checkers::check_transport(results[i].res, results[i].transport_id, weight_inner_cluster[i]));
+        }
+
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
+    }
+
+    void ant_test()
+    {
+        const char* name = "tests/osman_ant_test.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
+
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+        double length = 0;
+        vector<size_t> checks;
+        vector<project::Osman> results;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            Ant_algorithm ant(dist_inner_cluster[i], weight_inner_cluster[i], transports);
+            ant.run();
+
+            auto data = project::Osman::transform_data(ant.res);
+
+            project::Osman osman(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, data.first,
+                data.second, data.first.size());
+
+            osman.run();
+            osman.add_zero_vertex();
+            results.push_back(osman);
+        }
+
+        cout << "# osman" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            length += results[i].length();
+            print::print_file(results[i].res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(results[i].res, dist_inner_cluster[i].size()));
+            checks.push_back(checkers::check_transport(results[i].res, results[i].transport_id, weight_inner_cluster[i]));
+        }
+
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
+    }
 }
 
-void greedy_test()
+namespace local_test
 {
-    const char* name = "tests/greedy_res.txt";
-    std::ofstream out(name);
-    out.close();
-    read_file();
-    read_transports();
-    dist_mat = utils::fill_matrix(x, y);
-
-    unsigned int start_time = clock();
-    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
-    
-    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
-    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
-
-
-    double length = 0;
-    vector<size_t> checks;
-    for (size_t i = 0; i < clusters.size(); i++)
+    void sweep_test()
     {
-        auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+        const char* name = "tests/local_sweep_res.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
 
-        project::GreadyBase greedy(
-            dist_inner_cluster[i],
-            sort_matrix,
-            weight_inner_cluster[i],
-            transports);
-        greedy.run();
-        length += greedy.length();
-        print::print_file(greedy.res, clusters, i, name);
-        checks.push_back(checkers::check_matrix(greedy.res, dist_inner_cluster[i].size()));
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+        auto x_coord = clustering::get_weight_inner_cluster(x, clusters);
+        auto y_coord = clustering::get_weight_inner_cluster(y, clusters);
+
+        double length = 0;
+        vector<size_t> checks;
+        vector<project::WidhtNeighborhoodSearch> results;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            project::Sweeping sweep(dist_inner_cluster[i], x_coord[i], y_coord[i], weight_inner_cluster[i], transports);
+            sweep.run();
+
+            auto data = project::Osman::transform_data(sweep.res);
+
+            project::Osman osman(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, data.first,
+                data.second, data.first.size());
+
+            osman.run();
+            osman.add_zero_vertex();
+
+            project::WidhtNeighborhoodSearch local(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, osman.res,
+                osman.transport_id);
+
+            local.run();
+
+            results.push_back(local);
+        }
+
+
+        cout << "# local_sweep_res" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            length += results[i].length();
+            print::print_file(results[i].res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(results[i].res, dist_inner_cluster[i].size()));
+            checks.push_back(checkers::check_transport(results[i].res, results[i].transport_id, weight_inner_cluster[i]));
+        }
+
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
     }
 
-    cout << "# greedy" << endl;
-    cout << "# time: " << clock() - start_time << " millisec "<< endl;
-    cout << "# length: " << length << endl;
-    for (size_t check : checks)
-        cout << "check: " << check << endl;
-    
-}
-
-void ant_test()
-{
-    const char* name = "tests/ant_res.txt";
-    std::ofstream out(name);
-    out.close();
-    read_file();
-    read_transports();
-    dist_mat = utils::fill_matrix(x, y);
-
-    unsigned int start_time = clock();
-    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
-
-    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
-    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
-
-
-    double length = 0;
-    vector<size_t> checks;
-    vector<Ant_algorithm> reults;
-    for (size_t i = 0; i < clusters.size(); i++)
+    void clark_test()
     {
-        Ant_algorithm ant(dist_inner_cluster[i], weight_inner_cluster[i], transports);
-        ant.run();
-        reults.push_back(ant);
+        const char* name = "tests/local_clark_res.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
+
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+        double length = 0;
+        vector<size_t> checks;
+        vector<project::WidhtNeighborhoodSearch> results;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            project::ClarkRight clurk(dist_inner_cluster[i], weight_inner_cluster[i], transports);
+            clurk.run();
+
+            auto data = project::Osman::transform_data(clurk.res);
+
+            project::Osman osman(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, data.first,
+                data.second, data.first.size());
+
+            osman.run();
+            osman.add_zero_vertex();
+
+            project::WidhtNeighborhoodSearch local(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, osman.res,
+                osman.transport_id);
+
+            local.run();
+
+            results.push_back(local);
+        }
+
+
+        cout << "# local_clark_res" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            length += results[i].length();
+            print::print_file(results[i].res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(results[i].res, dist_inner_cluster[i].size()));
+            checks.push_back(checkers::check_transport(results[i].res, results[i].transport_id, weight_inner_cluster[i]));
+        }
+
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
     }
 
-    cout << "# ant" << endl;
-    cout << "# time: " << clock() - start_time << " millisec " << endl;
-
-    for (size_t i = 0; i < clusters.size(); i++)
+    void gready_test()
     {
-        length += reults[i].length();
-        print::print_file(reults[i].res, clusters, i, name);
-        checks.push_back(checkers::check_matrix(reults[i].res, dist_inner_cluster[i].size()));
-        for (size_t j = 0; j < reults[i].res.size(); j++)
-            checks.push_back(checkers::check_transport(reults[i].res[j], transports[j], weight_inner_cluster[i]));
+        const char* name = "tests/local_gready_res.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
+
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+        double length = 0;
+        vector<size_t> checks;
+        vector<project::WidhtNeighborhoodSearch> results;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+
+            project::GreadyBase greedy(
+                dist_inner_cluster[i],
+                sort_matrix,
+                weight_inner_cluster[i],
+                transports);
+            greedy.run();
+
+            auto data = project::Osman::transform_data(greedy.res);
+
+            project::Osman osman(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, data.first,
+                data.second, data.first.size());
+
+            osman.run();
+            osman.add_zero_vertex();
+
+            project::WidhtNeighborhoodSearch local(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, osman.res,
+                osman.transport_id);
+
+            local.run();
+
+            results.push_back(local);
+        }
+
+
+        cout << "# local_gready_res" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            length += results[i].length();
+            print::print_file(results[i].res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(results[i].res, dist_inner_cluster[i].size()));
+            checks.push_back(checkers::check_transport(results[i].res, results[i].transport_id, weight_inner_cluster[i]));
+        }
+
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
     }
 
-    cout << "# length: " << length << endl;
-    for (size_t check : checks)
-        cout << "check: " << check << endl;
-}
-
-void osman_gready_test()
-{
-    const char* name = "osman_res.txt";
-    std::ofstream out(name);
-    out.close();
-    read_file();
-    read_transports();
-    dist_mat = utils::fill_matrix(x, y);
-
-    unsigned int start_time = clock();
-    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
-
-    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
-    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
-
-    double length = 0;
-    vector<size_t> checks;
-    vector<project::Osman_new> reults;
-    for (size_t i = 0; i < clusters.size(); i++)
+    void ant_test()
     {
-        auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+        const char* name = "tests/local_ant_res.txt";
+        std::ofstream out(name);
+        out.close();
+        read_file();
+        read_transports();
+        dist_mat = utils::fill_matrix(x, y);
 
-        project::GreadyBase greedy(
-            dist_inner_cluster[i],
-            sort_matrix,
-            weight_inner_cluster[i],
-            transports);
-        greedy.run();
+        unsigned int start_time = clock();
+        auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
 
-        auto data = project::Osman_new::transform_data(greedy.res);
+        auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+        auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
 
-        project::Osman_new osman(dist_inner_cluster[i],
-            weight_inner_cluster[i],
-            transports, data.first,
-            data.second, data.first.size());
+        double length = 0;
+        vector<size_t> checks;
+        vector<project::WidhtNeighborhoodSearch> results;
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            Ant_algorithm ant(dist_inner_cluster[i], weight_inner_cluster[i], transports);
+            ant.run();
 
-        osman.run();
-        //osman.add_zero_vertex();
-        reults.push_back(osman);
+            auto data = project::Osman::transform_data(ant.res);
+
+            project::Osman osman(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, data.first,
+                data.second, data.first.size());
+
+            osman.run();
+            osman.add_zero_vertex();
+
+            project::WidhtNeighborhoodSearch local(dist_inner_cluster[i],
+                weight_inner_cluster[i],
+                transports, osman.res,
+                osman.transport_id);
+
+            local.run();
+
+            results.push_back(local);
+        }
+
+
+        cout << "# local_ant_res" << endl;
+        cout << "# time: " << clock() - start_time << " millisec " << endl;
+
+        for (size_t i = 0; i < clusters.size(); i++)
+        {
+            length += results[i].length();
+            print::print_file(results[i].res, clusters, i, name);
+            checks.push_back(checkers::check_matrix(results[i].res, dist_inner_cluster[i].size()));
+            checks.push_back(checkers::check_transport(results[i].res, results[i].transport_id, weight_inner_cluster[i]));
+        }
+
+        cout << "# length: " << length << endl;
+        for (size_t check : checks)
+            cout << "check: " << check << endl;
     }
-
-    cout << "# osman" << endl;
-    cout << "# time: " << clock() - start_time << " millisec " << endl;
-
-    for (size_t i = 0; i < clusters.size(); i++)
-    {
-        length += reults[i].length();
-        print::print_file(reults[i].res, clusters, i, name);
-        checks.push_back(checkers::check_matrix(reults[i].res, dist_inner_cluster[i].size()));
-        checks.push_back(checkers::check_transport(reults[i].res, reults[i].transport_id, weight_inner_cluster[i]));
-    }
-
-    cout << "# length: " << length << endl;
-    for (size_t check : checks)
-        cout << "check: " << check << endl;
-}
-
-void osman_test()
-{
-    const char* name = "tests/osman_res.txt";
-    std::ofstream out(name);
-    out.close();
-    read_file();
-    read_transports();
-    dist_mat = utils::fill_matrix(x, y);
-
-    unsigned int start_time = clock();
-    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
-
-    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
-    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
-
-    double length = 0;
-    vector<size_t> checks;
-    vector<project::Osman> reults;
-    for (size_t i = 0; i < clusters.size(); i++)
-    {
-        Ant_algorithm ant(dist_inner_cluster[i], weight_inner_cluster[i], transports);
-        ant.run();
-
-        auto data = project::Osman::transform_data(ant.res);
-
-        project::Osman osman(dist_inner_cluster[i],
-            weight_inner_cluster[i],
-            transports, data.first,
-            data.second, data.first.size());
-
-        osman.run();
-        //osman.add_zero_vertex();
-        reults.push_back(osman);
-    }
-
-    cout << "# osman" << endl;
-    cout << "# time: " << clock() - start_time << " millisec " << endl;
-
-    for (size_t i = 0; i < clusters.size(); i++)
-    {
-        length += reults[i].length();
-        print::print_file(reults[i].res, clusters, i, name);
-        checks.push_back(checkers::check_matrix(reults[i].res, dist_inner_cluster[i].size()));
-        checks.push_back(checkers::check_transport(reults[i].res, reults[i].transport_id, weight_inner_cluster[i]));
-    }
-
-    cout << "# length: " << length << endl;
-    for (size_t check : checks)
-        cout << "check: " << check << endl;
 }
 
 void global_local_search_cluster_test(const vector<int_matrix>& vec_routs,
@@ -760,7 +1119,7 @@ void local_search_cluster_test_old()
             transports, data.first,
             data.second, data.first.size());
         osman.run();
-        //osman.add_zero_vertex();
+        osman.add_zero_vertex();
         len = osman.length();
         cout << "osman length: " << len << endl;
         sum_osman += len;
@@ -797,7 +1156,7 @@ void local_search_cluster_test_old()
 
 void final_test()
 {
-    const char* name = "tests/final_res.txt";
+    const char* name = "final_res.txt";
     std::ofstream out(name);
     out.close();
     read_file();
@@ -828,6 +1187,7 @@ void final_test()
             data.second, data.first.size());
 
         osman.run();
+        osman.add_zero_vertex();
 
         project::WidhtNeighborhoodSearch local(dist_inner_cluster[i],
             weight_inner_cluster[i],
@@ -928,8 +1288,52 @@ void opt_3_test()
         cout << "check: " << check << endl;
 }
 
+void greedy_serach_test()
+{
+    const char* name = "tests/greedy_serach_test.txt";
+    //std::ofstream out(name);
+    //out.close();
+    read_file();
+    read_transports();
+    dist_mat = utils::fill_matrix(x, y);
+
+    unsigned int start_time = clock();
+    auto clusters = clustering::dichotomous_division_weight(dist_mat, weights, clust_capacity, count_clust);
+
+    auto dist_inner_cluster = clustering::get_dist_inner_cluster(dist_mat, clusters);
+    auto weight_inner_cluster = clustering::get_weight_inner_cluster(weights, clusters);
+
+
+    double length = 0;
+    vector<size_t> checks;
+    for (size_t i = 0; i < clusters.size(); i++)
+    {
+        auto sort_matrix = utils::fill_sort_matrix(dist_inner_cluster[i]);
+
+        project::GreadyBase greedy(
+            dist_inner_cluster[i],
+            sort_matrix,
+            weight_inner_cluster[i],
+            transports);
+        //greedy.run();
+        auto param = greedy.grid_search_param();
+        cout << "coef_filling: " << param.first << "; coef_cut: " << param .second << endl;
+        length += greedy.length();
+        //print::print_file(greedy.res, clusters, i, name);
+        checks.push_back(checkers::check_matrix(greedy.res, dist_inner_cluster[i].size()));
+    }
+
+    cout << "# greedy" << endl;
+    cout << "# time: " << clock() - start_time << " millisec " << endl;
+    cout << "# length: " << length << endl;
+    for (size_t check : checks)
+        cout << "check: " << check << endl;
+
+}
+
 int main()
 {
-    opt_3_test();
+    local_test::clark_test();
+    local_test::sweep_test();
     return 0;
 }

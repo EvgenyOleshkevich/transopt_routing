@@ -29,6 +29,19 @@ namespace utils
         return dist_mat;
     }
 
+    double mean_edge(const matrix& dist_mat)
+    {
+        double mean_edge = 0;
+        size_t count_edge = 0;
+        for (size_t i = 1; i < dist_mat.size(); ++i)
+            for (size_t j = 1; j < dist_mat.size(); ++j)
+            {
+                ++count_edge;
+                mean_edge += dist_mat[i][j];
+            }
+        return mean_edge /= count_edge;
+    }
+
     std::pair<matrix, sorted_matrix> fill_matrix_and_sort(
         const vector<double>& x, const vector<double>& y)
     {

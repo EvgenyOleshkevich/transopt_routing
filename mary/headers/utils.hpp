@@ -30,6 +30,8 @@ namespace utils
 
     matrix fill_matrix(const vector<double>&, const vector<double>&);
 
+    double mean_edge(const matrix&);
+
     pair < matrix, sorted_matrix> fill_matrix_and_sort(const vector<double>&, const vector<double>&);
 
     sorted_matrix fill_sort_matrix(const matrix& dist_mat);
